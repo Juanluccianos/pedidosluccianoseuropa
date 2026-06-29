@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Pedidos Lucciano's">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Pedidos Lucciano's Europa</title>
+<style>
+:root{
+  --negro:#000; --blanco:#fff; --gris:#f4f4f5; --gris2:#e7e7ea;
+  --texto:#111; --tenue:#6b7280; --linea:#e2e2e6; --ok:#16a34a; --rojo:#dc2626;
+  --nav-h:62px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0; overflow-x:hidden; overscroll-behavior:none; touch-action:pan-y;}
+html{ -webkit-text-size-adjust:100%; }
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--blanco); color:var(--texto);
+  min-height:100dvh;
+  padding-top:env(safe-area-inset-top);
+}
+button,input,select{font-family:inherit; font-size:16px; touch-action:manipulation;}
+button{cursor:pointer; border:none; background:none;}
+img{display:block;}
+
+/* ===== TOP BAR (negra) ===== */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  background:var(--negro); color:#fff;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+  margin-top:calc(-1 * env(safe-area-inset-top));
+  display:flex; align-items:center; gap:12px; min-height:56px;
+}
+.topbar .logo{height:30px; width:auto;}
+.topbar .tb-title{font-size:16px; font-weight:600; letter-spacing:.2px;}
+.topbar .tb-back{
+  color:#fff; font-size:22px; line-height:1; padding:6px 8px 6px 0; margin-left:-4px;
+}
+.topbar .tb-sub{font-size:12px; color:#bdbdc2; font-weight:400;}
+
+/* ===== CONTENIDO (blanco) ===== */
+.wrap{
+  width:100%; max-width:640px; margin:0 auto;
+  padding:14px 14px calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));
+}
+.screen{display:none;} .screen.activo{display:block;}
+
+h2.tit{font-size:18px; margin:4px 2px 12px; font-weight:700;}
+.vacio{
+  text-align:center; color:var(--tenue); padding:48px 20px;
+  border:1.5px dashed var(--linea); border-radius:16px; margin-top:8px;
+}
+.vacio b{color:var(--texto); display:block; margin-bottom:4px; font-size:16px;}
+
+/* tarjetas de pedido */
+.card{
+  background:var(--blanco); border:1px solid var(--linea); border-radius:14px;
+  padding:14px; margin-bottom:10px; display:flex; align-items:center; gap:12px;
+}
+.card:active{background:var(--gris);}
+.card .ci{flex:1; min-width:0;}
+.card .ci .n{font-weight:700; font-size:15px;}
+.card .ci .m{font-size:13px; color:var(--tenue); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.card .badge{
+  background:var(--negro); color:#fff; border-radius:999px; padding:4px 10px;
+  font-size:12px; font-weight:600; white-space:nowrap;
+}
+.card .chev{color:#c4c4cc; font-size:20px;}
+
+/* lista de items dentro del pedido */
+.itemrow{
+  border:1px solid var(--linea); border-radius:12px; padding:11px 12px; margin-bottom:9px; background:#fff;
+}
+.itemrow .top{display:flex; align-items:flex-start; gap:8px;}
+.itemrow .nm{flex:1; min-width:0;}
+.itemrow .nm .nb{font-weight:600; font-size:14px; line-height:1.25;}
+.itemrow .nm .cd{font-size:11px; color:var(--tenue); font-family:ui-monospace,Menlo,Consolas,monospace; margin-top:1px;}
+.itemrow .meta{font-size:12px; color:var(--tenue); margin-top:6px; display:flex; flex-wrap:wrap; gap:4px 10px;}
+.itemrow .meta .tag{background:var(--gris); padding:2px 8px; border-radius:6px;}
+.itemrow .del{color:var(--rojo); font-size:13px; padding:4px 6px; font-weight:600;}
+
+/* stepper cantidad */
+.stepper{display:flex; align-items:center; gap:0; margin-top:9px; width:fit-content; border:1px solid var(--linea); border-radius:10px; overflow:hidden;}
+.stepper button{width:40px; height:38px; font-size:22px; font-weight:600; background:var(--gris); color:var(--negro); display:flex; align-items:center; justify-content:center;}
+.stepper button:active{background:var(--gris2);}
+.stepper .val{width:58px; height:38px; text-align:center; border:none; font-weight:700; font-size:16px; -moz-appearance:textfield;}
+.stepper .val::-webkit-outer-spin-button,.stepper .val::-webkit-inner-spin-button{-webkit-appearance:none;}
+.stepper .um{font-size:12px; color:var(--tenue); padding:0 10px;}
+
+/* botones */
+.btn{
+  width:100%; background:var(--negro); color:#fff; border-radius:12px;
+  padding:14px; font-size:15px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn:active{opacity:.85;}
+.btn.sec{background:#fff; color:var(--negro); border:1.5px solid var(--negro);}
+.btn.gris{background:var(--gris); color:var(--negro);}
+.btn-row{display:flex; gap:10px; margin-top:8px;}
+.btn-row .btn{margin:0;}
+
+/* FAB (abajo a la izquierda) */
+.fab{
+  position:fixed; left:16px; z-index:45;
+  bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom));
+  width:56px; height:56px; border-radius:50%;
+  background:var(--negro); color:#fff; font-size:30px; font-weight:300;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+}
+.fab:active{transform:scale(.94);}
+
+/* ===== BOTTOM NAV (negra, anclada bien abajo) ===== */
+.bottomnav{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:var(--negro);
+  padding-bottom:env(safe-area-inset-bottom);
+  display:flex; border-top:1px solid #1c1c1c;
+}
+.bottomnav .tab{
+  flex:1; height:var(--nav-h); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:3px; color:#7d7d85; font-size:11px; font-weight:600;
+}
+.bottomnav .tab.on{color:#fff;}
+.bottomnav .tab svg{width:23px; height:23px;}
+
+/* ===== Catálogo ===== */
+.searchbar{position:relative; margin-bottom:12px;}
+.searchbar input{
+  width:100%; padding:13px 14px 13px 42px; border:1px solid var(--linea);
+  border-radius:12px; background:var(--gris); outline:none;
+}
+.searchbar input:focus{background:#fff; border-color:var(--negro);}
+.searchbar .ic{position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--tenue);}
+.catart{border-bottom:1px solid var(--linea); padding:11px 4px;}
+.catart .l1{display:flex; gap:8px; align-items:baseline;}
+.catart .l1 .nb{font-weight:600; font-size:14px; flex:1;}
+.catart .l1 .cd{font-size:11px; color:var(--tenue); font-family:ui-monospace,monospace;}
+.catart .l2{font-size:12px; color:var(--tenue); margin-top:3px;}
+.cathead{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#fff; background:var(--negro); padding:6px 10px; border-radius:8px; margin:16px 0 6px;}
+
+/* ===== Modal / hoja ===== */
+.modal-bg{
+  position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.45);
+  display:none; align-items:flex-end; justify-content:center;
+}
+.modal-bg.abierto{display:flex;}
+.sheet{
+  background:#fff; width:100%; max-width:640px; border-radius:18px 18px 0 0;
+  max-height:88vh; display:flex; flex-direction:column;
+  padding-bottom:env(safe-area-inset-bottom);
+  animation:subir .22s ease;
+}
+@keyframes subir{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.sheet .sh-head{padding:16px 16px 8px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--linea);}
+.sheet .sh-head .t{font-weight:700; font-size:16px;}
+.sheet .sh-head .x{font-size:24px; color:var(--tenue); padding:0 4px; line-height:1;}
+.sheet .sh-body{padding:14px 16px; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+.campo{margin-bottom:14px;}
+.campo label{display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:#333;}
+.campo select, .campo input{
+  width:100%; padding:13px; border:1px solid var(--linea); border-radius:11px; background:#fff; outline:none;
+}
+.campo select:focus, .campo input:focus{border-color:var(--negro);}
+
+/* picker de artículos (lista desplegable con buscador) */
+.pickres{margin-top:4px; max-height:46vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+.pickres .opt{padding:11px 6px; border-bottom:1px solid var(--linea); display:flex; align-items:center; gap:10px;}
+.pickres .opt:active{background:var(--gris);}
+.pickres .opt .info{flex:1; min-width:0;}
+.pickres .opt .info .nb{font-weight:600; font-size:14px;}
+.pickres .opt .info .sub{font-size:12px; color:var(--tenue); margin-top:2px;}
+.pickres .opt .plus{width:34px; height:34px; border-radius:50%; background:var(--negro); color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.pickres .none{text-align:center; color:var(--tenue); padding:30px 10px; font-size:14px;}
+.yaesta{font-size:11px; color:var(--ok); font-weight:700;}
+
+/* toast */
+.toast{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(var(--nav-h) + 28px + env(safe-area-inset-bottom));
+  background:#111; color:#fff; padding:11px 18px; border-radius:999px; font-size:14px;
+  z-index:200; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; max-width:90%; text-align:center;
+}
+.toast.ver{opacity:1; transform:translateX(-50%) translateY(0);}
+
+.resumen{background:var(--gris); border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:14px;}
+.resumen .r{display:flex; justify-content:space-between; padding:3px 0;}
+.resumen .r b{font-weight:700;}
+.dato{font-size:12px; color:var(--tenue);}
+.acercade{font-size:13px; color:var(--tenue); line-height:1.55;}
+.acercade b{color:var(--texto);}
+@media (prefers-reduced-motion: reduce){ .sheet{animation:none;} .toast{transition:none;} }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="tb-back" id="btnBack" style="display:none" aria-label="Volver">&#8592;</button>
+  <img src="Logo_app.png" class="logo" alt="Lucciano's" id="tbLogo">
+  <div>
+    <div class="tb-title" id="tbTitle">Pedidos Europa</div>
+    <div class="tb-sub" id="tbSub" style="display:none"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- PANTALLA: lista de pedidos -->
+  <section class="screen activo" id="scPedidos">
+    <h2 class="tit">Pedidos</h2>
+    <div id="listaPedidos"></div>
+  </section>
+
+  <!-- PANTALLA: detalle de un pedido -->
+  <section class="screen" id="scDetalle">
+    <div class="resumen" id="detResumen"></div>
+    <button class="btn" id="btnAddArt"><span style="font-size:20px">+</span> Agregar artículo</button>
+    <div id="listaItems" style="margin-top:14px"></div>
+    <div class="btn-row" id="accionesExport" style="display:none">
+      <button class="btn sec" id="btnExcel">Exportar Excel</button>
+      <button class="btn" id="btnMail">Enviar por mail</button>
+    </div>
+  </section>
+
+  <!-- PANTALLA: catálogo -->
+  <section class="screen" id="scCatalogo">
+    <h2 class="tit">Catálogo</h2>
+    <div class="searchbar">
+      <span class="ic">&#128269;</span>
+      <input id="buscarCat" type="search" placeholder="Buscar artículo, código o categoría" autocomplete="off">
+    </div>
+    <div id="listaCatalogo"></div>
+  </section>
+
+  <!-- PANTALLA: info -->
+  <section class="screen" id="scInfo">
+    <h2 class="tit">Información</h2>
+    <div class="acercade">
+      <p><b>Pedidos Lucciano's Europa</b> &mdash; app para que los encargados de los locales carguen sus pedidos de insumos desde un catálogo fijo.</p>
+      <p>El catálogo tiene <b id="nArt"></b> artículos en <b id="nCat"></b> categorías. Cada artículo trae su código, unidad de medida, marca, proveedor y contacto predeterminados.</p>
+      <p>Los pedidos se guardan en este dispositivo. Podés exportarlos a Excel (se abre en Google Sheets con el mismo formato) o enviarlos por mail.</p>
+      <div class="resumen" style="margin-top:14px">
+        <div class="r"><span>Pedidos guardados</span><b id="infPedidos">0</b></div>
+        <div class="r"><span>Último número usado</span><b id="infContador">&mdash;</b></div>
+      </div>
+      <button class="btn gris" id="btnExportData" style="margin-top:6px">Backup de datos (JSON)</button>
+      <button class="btn gris" id="btnImportData" style="margin-top:8px">Restaurar backup</button>
+      <input type="file" id="fileImport" accept="application/json" style="display:none">
+    </div>
+  </section>
+</div>
+
+<!-- FAB: nuevo pedido (abajo izquierda) -->
+<button class="fab" id="fab" aria-label="Nuevo pedido">+</button>
+
+<!-- BOTTOM NAV -->
+<nav class="bottomnav">
+  <button class="tab on" data-tab="scPedidos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>
+    Pedidos
+  </button>
+  <button class="tab" data-tab="scCatalogo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    Catálogo
+  </button>
+  <button class="tab" data-tab="scInfo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>
+    Info
+  </button>
+</nav>
+
+<!-- MODAL genérico -->
+<div class="modal-bg" id="modal">
+  <div class="sheet">
+    <div class="sh-head"><div class="t" id="modalTit"></div><button class="x" id="modalX">&times;</button></div>
+    <div class="sh-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ====== DATOS DEL CATÁLOGO (embebidos, offline) ====== */
+const CATS = [{"id":"ADITIVOS","pref":"ADI","nombre":"Aditivos"},{"id":"AZUCAR","pref":"AZU","nombre":"Azucar"},{"id":"CHOCOLATES","pref":"CHO","nombre":"Chocolates"},{"id":"BARRY CALLEBAUT","pref":"BAR","nombre":"Barry Callebaut"},{"id":"ICAM","pref":"ICA","nombre":"Icam"},{"id":"SALSAS Y VARIEGATOS BABBI","pref":"SAL","nombre":"Salsas Y Variegatos Babbi"},{"id":"COLORANTES","pref":"COL","nombre":"Colorantes"},{"id":"DULCE DE LECHE","pref":"DUL","nombre":"Dulce De Leche"},{"id":"FRUTAS Y VERDURAS","pref":"FRU","nombre":"Frutas Y Verduras"},{"id":"GALLETITAS","pref":"GAL","nombre":"Galletitas"},{"id":"INSUMOS","pref":"INS","nombre":"Insumos"},{"id":"LACTEOS","pref":"LAC","nombre":"Lacteos"},{"id":"PASTAS Y BASES","pref":"PAS","nombre":"Pastas Y Bases"},{"id":"VARIOS","pref":"VAR","nombre":"Varios"},{"id":"TERMINADOS","pref":"TER","nombre":"Terminados"},{"id":"TOPPINGS","pref":"TOP","nombre":"Toppings"},{"id":"SALSAS Y VARIEGATOS","pref":"SA2","nombre":"Salsas Y Variegatos"},{"id":"BEBIDAS","pref":"BEB","nombre":"Bebidas"},{"id":"ARTICULOS DE LIMPIEZA","pref":"ART","nombre":"Articulos De Limpieza"},{"id":"BALDES Y VASQUETAS","pref":"BAL","nombre":"Baldes Y Vasquetas"},{"id":"CAFES","pref":"CAF","nombre":"Cafes"},{"id":"TERMICOS","pref":"TE2","nombre":"Termicos"},{"id":"CUCHARAS","pref":"CUC","nombre":"Cucharas"},{"id":"CUCURUCHOS","pref":"CU2","nombre":"Cucuruchos"},{"id":"POLIPAPEL","pref":"POL","nombre":"Polipapel"},{"id":"SERVILLETAS","pref":"SER","nombre":"Servilletas"},{"id":"UNIFORMES DESPACHANTE","pref":"UNI","nombre":"Uniformes Despachante"},{"id":"UNIFORMES LABORATORIO","pref":"UN2","nombre":"Uniformes Laboratorio"}];
+const ARTS = [{"nombre":"DEXTROSA","cat":"ADITIVOS","unidad":"BOLSA X 25 KG","marca":"Cargill","prov":"Jose LLopart SA","cont":"pedidos3@josellopart.com","cod":"ADI-001"},{"nombre":"DEXTROSA 25 KG (FABRICA MALAGA)","cat":"ADITIVOS","unidad":"","marca":"","prov":"","cont":"","cod":"ADI-002"},{"nombre":"MALTODEXTRINA (HELADIN)","cat":"ADITIVOS","unidad":"","marca":"","prov":"","cont":"","cod":"ADI-003"},{"nombre":"MALTODEXTRINA X KG","cat":"ADITIVOS","unidad":"BOLSA X 25 KG","marca":"","prov":"Jose LLopart SA","cont":"pedidos3@josellopart.com","cod":"ADI-004"},{"nombre":"AZUCAR BLANCA","cat":"AZUCAR","unidad":"BOLSA X 25 KG","marca":"Azucarera","prov":"Jose LLopart SA","cont":"pedidos3@josellopart.com","cod":"AZU-001"},{"nombre":"DEXTROSA","cat":"AZUCAR","unidad":"BOLSA X 25 KG","marca":"","prov":"Jose LLopart SA","cont":"pedidos3@josellopart.com","cod":"AZU-002"},{"nombre":"FIDEO AZUCAR COLORES DELITE","cat":"AZUCAR","unidad":"","marca":"","prov":"","cont":"","cod":"AZU-003"},{"nombre":"FRUCTOSA GRANEL 25 KG (HELADIN)","cat":"AZUCAR","unidad":"","marca":"","prov":"","cont":"","cod":"AZU-004"},{"nombre":"BAGUA NATIVO - PERU CACAO 81%","cat":"CHOCOLATES","unidad":"bolsa 15 kg","marca":"ICAM","prov":"ICAM","cont":"alba.e@leagel.com","cod":"CHO-001"},{"nombre":"BLOCKS GIA 144 MILK","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-002"},{"nombre":"BOTONES/ESFERAS DE CHOCOLATE","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-003"},{"nombre":"CACAO EN POLVO ALCALINIZADO 22/24 - ICAM","cat":"CHOCOLATES","unidad":"bolsa 15 kg","marca":"ICAM","prov":"ICAM","cont":"alba.e@leagel.com","cod":"CHO-004"},{"nombre":"CACAO EN POLVO ALCANIZADO 22/24 - 100054-793","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-005"},{"nombre":"CALLEBAUT COBERTURA DE CHOCOLATE CON EDULCORANTES","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-006"},{"nombre":"CALLEBAUT COBERTURA CHOC. C/ EDULCORANTE","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-007"},{"nombre":"CALLEBAUT COUVER MILK CHOCO 10KG 823NV-01B","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-008"},{"nombre":"CALLEBAUT DARK 53% CHOCO (CALLETS 10KG) 811NV-01B","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-009"},{"nombre":"CALLEBAUT DARK CHOCOLATE 70% (BC10 KG)70-30-38NV-01B","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-010"},{"nombre":"CALLEBAUT ICE CHOCOLATE - DARK COBERTURA ICE-45-DNV-552","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-011"},{"nombre":"CALLEBAUT KUMABO","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-012"},{"nombre":"CALLEBAUT NO SUGAR ADDED CHOCOLATE B C/EDULC","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-013"},{"nombre":"CALLEBAUT STRACCIATELLA DARK","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-014"},{"nombre":"CALLEBAUT STRACCIATELLA GOLD ICE42GOLD552","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-015"},{"nombre":"CALLEBAUT WHITE CHOCOLATE CALLETS 10KG","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-016"},{"nombre":"CHOCOGELATO GOLD","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-017"},{"nombre":"CHOCOLATE BLANCO ICAM (HELADIN)","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-018"},{"nombre":"COBERTURA DE CHOCOLATE CON LECHE 34.1%%","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-019"},{"nombre":"COBERTURA DE CHOCOLATE NEGRO CALLETS X 2.5 KG","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-020"},{"nombre":"COCOA BUTTER (CB 3 KG) - MANTECA DE CACAO NCB-HD703-BY-654","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-021"},{"nombre":"DARK CHOC. COUV. MABEL COCOA 56% 15K","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-022"},{"nombre":"FLOR ROSA - PINK FLOWER (DOBLA) 302 UDS","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-023"},{"nombre":"FONDENTE VANINI CACAO 72%","cat":"CHOCOLATES","unidad":"bolsa 15 kg","marca":"ICAM","prov":"ICAM","cont":"alba.e@leagel.com","cod":"CHO-024"},{"nombre":"ICE CHOCOLATE WHITE (STRACCIATELLA BLANCA) ICE-50-WNV-552","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-025"},{"nombre":"MABEL FONDENTE CACAO 56%","cat":"CHOCOLATES","unidad":"bolsa 15 kg","marca":"ICAM","prov":"ICAM","cont":"alba.e@leagel.com","cod":"CHO-026"},{"nombre":"MALCHOC MILK (CA CALLETS 10 KG ) CSM-Q34MAL-471","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-027"},{"nombre":"MALCHOC WHITE (NO SUGAR ADDED) MALCHOC-W-123","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-028"},{"nombre":"MANTECA DE CACAO GOTAS DELITE 1.5 KG (MALAGA FABRICA)","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-029"},{"nombre":"MARGARITA - DAISY CHOCOLATE (DOBLA)- 200 UDS","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-030"},{"nombre":"MILK CHOC. COUV. PRESTIGE COCOA 32%","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-031"},{"nombre":"PRESTIGE LATTE CACAO 32 %","cat":"CHOCOLATES","unidad":"bolsa 15 kg","marca":"ICAM","prov":"ICAM","cont":"alba.e@leagel.com","cod":"CHO-032"},{"nombre":"SENSA ZUCCHERI AGGIUNTI LATTE","cat":"CHOCOLATES","unidad":"bolsa 15 kg","marca":"ICAM","prov":"ICAM","cont":"alba.e@leagel.com","cod":"CHO-033"},{"nombre":"SPOTS ORIGINAL (DOBLA) - 140 UDS","cat":"CHOCOLATES","unidad":"","marca":"","prov":"","cont":"","cod":"CHO-034"},{"nombre":"WHITE CHOCOLATE EDELWEISS KG.15","cat":"CHOCOLATES","unidad":"bolsa 15 kg","marca":"ICAM","prov":"ICAM","cont":"alba.e@leagel.com","cod":"CHO-035"},{"nombre":"Bensdorp 22/24 SR Cacao en polvo alcalinizado","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-001"},{"nombre":"Cacao Barry Manteca de cacao 3KG","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-002"},{"nombre":"Cobertura de chocolate con edulcorante 53.9%","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-003"},{"nombre":"Cobertura de chocolate con leche 34.1%%","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-004"},{"nombre":"Kumabo Cobertura de chocolate negro 80.1%","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-005"},{"nombre":"Cobertura Chocolate negro 70.4%","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-006"},{"nombre":"Chocolate blanco Easymelt","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-007"},{"nombre":"Cobertura de chocolate con leche 31.9%","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-008"},{"nombre":"Dark Cobertura de chocolate (STRACCIATELLA) 56.4%","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-009"},{"nombre":"SELECT COBERTURA DE CHOCOLATE NEGRO 54.1%","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-010"},{"nombre":"Chocolate blanco (STRACCIATELLA BLANCA) 38.5%","cat":"BARRY CALLEBAUT","unidad":"","marca":"","prov":"","cont":"","cod":"BAR-011"},{"nombre":"Fondente vanini 72%","cat":"ICAM","unidad":"","marca":"","prov":"","cont":"","cod":"ICA-001"},{"nombre":"Bianca edelweiss (Chocolate blanco)","cat":"ICAM","unidad":"","marca":"","prov":"","cont":"","cod":"ICA-002"},{"nombre":"Mabel fondente 56%","cat":"ICAM","unidad":"","marca":"","prov":"","cont":"","cod":"ICA-003"},{"nombre":"Prestige Latte 32%","cat":"ICAM","unidad":"","marca":"","prov":"","cont":"","cod":"ICA-004"},{"nombre":"Chocolate sin azucar agregada","cat":"ICAM","unidad":"","marca":"","prov":"","cont":"","cod":"ICA-005"},{"nombre":"Bagua Nativo Peru (81%)","cat":"ICAM","unidad":"","marca":"","prov":"","cont":"","cod":"ICA-006"},{"nombre":"Cacao polvo 22/24","cat":"ICAM","unidad":"","marca":"","prov":"","cont":"","cod":"ICA-007"},{"nombre":"COLORANTE AMARILLO CURCUMA","cat":"COLORANTES","unidad":"Ampolla","marca":"SOSA","prov":"SOSA INGREDIENTES","cont":"","cod":"COL-001"},{"nombre":"COLORANTE CARMIN","cat":"COLORANTES","unidad":"Ampolla","marca":"SOSA","prov":"SOSA INGREDIENTES","cont":"","cod":"COL-002"},{"nombre":"ESPIRULINA (AZUL)","cat":"COLORANTES","unidad":"Balde","marca":"SOSA","prov":"SOSA INGREDIENTES","cont":"","cod":"COL-003"},{"nombre":"DULCE DE LECHE CLASICO 6.5KG","cat":"DULCE DE LECHE","unidad":"Balde","marca":"TANGO","prov":"Veneta Academia","cont":"administracion@veneta-academia.com","cod":"DUL-001"},{"nombre":"DULCE DE LECHE HELADERO 6.5KG","cat":"DULCE DE LECHE","unidad":"Balde","marca":"TANGO","prov":"Veneta Academia","cont":"administracion@veneta-academia.com","cod":"DUL-002"},{"nombre":"DULCE DE LECHE VETEADO 3.5KG","cat":"DULCE DE LECHE","unidad":"Balde","marca":"TANGO","prov":"Veneta Academia","cont":"administracion@veneta-academia.com","cod":"DUL-003"},{"nombre":"FRASCO DULCE DE LECHE VETEADO X350GR","cat":"DULCE DE LECHE","unidad":"Caja x 12 un.","marca":"","prov":"","cont":"","cod":"DUL-004"},{"nombre":"BANANA (HELADIN)","cat":"FRUTAS Y VERDURAS","unidad":"","marca":"","prov":"","cont":"","cod":"FRU-001"},{"nombre":"FRESA CONGELADA 10 KG - ATLANTA","cat":"FRUTAS Y VERDURAS","unidad":"Caja x 10 kg","marca":"","prov":"Atlanta","cont":"barcelona@grupoatlanta.es","cod":"FRU-002"},{"nombre":"FRUTOS SECOS","cat":"FRUTAS Y VERDURAS","unidad":"","marca":"","prov":"","cont":"","cod":"FRU-003"},{"nombre":"CACAHUETE (MANI) TORRAT","cat":"FRUTAS Y VERDURAS","unidad":"Bolsa x 25 kg","marca":"STENGER","prov":"Stenger","cont":"Serafin (682409054)","cod":"FRU-004"},{"nombre":"COCO RALLADO","cat":"FRUTAS Y VERDURAS","unidad":"Bolsa x 25 kg","marca":"","prov":"Jose LLopart SA","cont":"pedidos3@josellopart.com","cod":"FRU-005"},{"nombre":"COCO RALLADO 1 KG (FABRICA MALAGA)","cat":"FRUTAS Y VERDURAS","unidad":"","marca":"","prov":"","cont":"","cod":"FRU-006"},{"nombre":"GRANELLA DI PISTACCHIO 10 kg","cat":"FRUTAS Y VERDURAS","unidad":"Caja x 10 bolsas x 1kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"FRU-007"},{"nombre":"GRANELLA NOCCIOLA PRALINATA CIURI CIURI","cat":"FRUTAS Y VERDURAS","unidad":"","marca":"","prov":"","cont":"","cod":"FRU-008"},{"nombre":"NOCCIOLE TOSTATE DA 1 KG","cat":"FRUTAS Y VERDURAS","unidad":"","marca":"","prov":"","cont":"","cod":"FRU-009"},{"nombre":"BIZCOCHO TIRAMISU F LIFE 500G","cat":"GALLETITAS","unidad":"caja x 500 gr","marca":"Makro","prov":"Makro","cont":"","cod":"GAL-001"},{"nombre":"GALLETA CREMA OREO","cat":"GALLETITAS","unidad":"caja x 40 unidades","marca":"Makro","prov":"Makro","cont":"","cod":"GAL-002"},{"nombre":"OREOS (HELADIN)","cat":"GALLETITAS","unidad":"","marca":"","prov":"","cont":"","cod":"GAL-003"},{"nombre":"SAVOIARDI (HELADIN)","cat":"GALLETITAS","unidad":"","marca":"","prov":"","cont":"","cod":"GAL-004"},{"nombre":"CAFE SOLUBLE (HELADIN)","cat":"INSUMOS","unidad":"","marca":"","prov":"","cont":"","cod":"INS-001"},{"nombre":"ESENCIA DE VAINILLA","cat":"INSUMOS","unidad":"","marca":"","prov":"","cont":"","cod":"INS-002"},{"nombre":"LECHE EN POLVO 26% ENTERA - 25 KG","cat":"LACTEOS","unidad":"25 kg","marca":"Solarec","prov":"Jose LLopart SA","cont":"pedidos3@josellopart.com","cod":"LAC-001"},{"nombre":"LECHE PRESIDENT DESNATADA","cat":"LACTEOS","unidad":"","marca":"","prov":"","cont":"","cod":"LAC-002"},{"nombre":"LECHE SIN LACTOSA","cat":"LACTEOS","unidad":"","marca":"","prov":"","cont":"","cod":"LAC-003"},{"nombre":"LECHE SOJA","cat":"LACTEOS","unidad":"","marca":"","prov":"","cont":"","cod":"LAC-004"},{"nombre":"MASCARPONE 1 KG","cat":"LACTEOS","unidad":"","marca":"","prov":"","cont":"","cod":"LAC-005"},{"nombre":"MASCARPONE 250 GR (KG)","cat":"LACTEOS","unidad":"","marca":"","prov":"Bayolac","cont":"nata@bayolac.com","cod":"LAC-006"},{"nombre":"NATA FRESCA 35% POR LITRO","cat":"LACTEOS","unidad":"x 1 Litro","marca":"Ken","prov":"Ski Catalunya SL","cont":"buzonpedidoskicat@ken-foods.com","cod":"LAC-007"},{"nombre":"NATA ELVIR MONTAR 35% 1KG","cat":"LACTEOS","unidad":"","marca":"","prov":"","cont":"","cod":"LAC-008"},{"nombre":"QUESO CREMA ESTILO PHILADELPHIA BCN","cat":"LACTEOS","unidad":"balde x 2 kg","marca":"Granja Rinya","prov":"Bayolac","cont":"nata@bayolac.com","cod":"LAC-009"},{"nombre":"YEMA PASTEURIZADA","cat":"LACTEOS","unidad":"caja x 1 lt","marca":"Dovo","prov":"Bayolac","cont":"nata@bayolac.com","cod":"LAC-010"},{"nombre":"BASE \" G \" CREME","cat":"PASTAS Y BASES","unidad":"0.9 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-001"},{"nombre":"BASE ELENA","cat":"PASTAS Y BASES","unidad":"1.8 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-002"},{"nombre":"BASE LIMONE 50 X 1 KG","cat":"PASTAS Y BASES","unidad":"1 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-003"},{"nombre":"BASE LUCCIANO DULCE DE LECHE","cat":"PASTAS Y BASES","unidad":"1.56 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-004"},{"nombre":"BASE LUCCIANO STECCHI FRUTTA GUSTO LIMONE","cat":"PASTAS Y BASES","unidad":"2 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-005"},{"nombre":"BASE LUCCIANO STECCHI LATTE","cat":"PASTAS Y BASES","unidad":"2 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-006"},{"nombre":"BASE LUCCIANOS","cat":"PASTAS Y BASES","unidad":"2 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-007"},{"nombre":"BASE SOAVE","cat":"PASTAS Y BASES","unidad":"2 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-008"},{"nombre":"CHANTILLY 60","cat":"PASTAS Y BASES","unidad":"1 kg","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-009"},{"nombre":"CHEESE CAKE 50 GMS","cat":"PASTAS Y BASES","unidad":"2 kg","marca":"LEAGEL","prov":"LEAGEL SRL","cont":"alba.e@leagel.com","cod":"PAS-010"},{"nombre":"CHEESE CAKE BASE X 1 KG","cat":"PASTAS Y BASES","unidad":"1 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-011"},{"nombre":"CIOCCODELIZIA CLASSICA SACCHETTO 500 GR","cat":"PASTAS Y BASES","unidad":"0.5 kg","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-012"},{"nombre":"COOKIES LEMON MERINGUE X 5.5 KG","cat":"PASTAS Y BASES","unidad":"5.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-013"},{"nombre":"COP. AL GUSTO DI CIOCC. FONDENTE M 5.5 KG (COBERTURA)","cat":"PASTAS Y BASES","unidad":"5.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-014"},{"nombre":"COPERTURA ARTISTICK PISTACCHIO","cat":"PASTAS Y BASES","unidad":"1 kg","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-015"},{"nombre":"FIORDIBOSCO X 3 KG","cat":"PASTAS Y BASES","unidad":"3 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-016"},{"nombre":"FIORDIMARACUJA X 3 KG","cat":"PASTAS Y BASES","unidad":"3 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-017"},{"nombre":"FROLLINO COOKIES BLACK MEC 3","cat":"PASTAS Y BASES","unidad":"1 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-018"},{"nombre":"GELSO ROSSO 3.5 KG","cat":"PASTAS Y BASES","unidad":"3.5 kg","marca":"CITTA DEL GELATO","prov":"CITTA DEL GELATO SRL","cont":"info@cittadelgelato.it","cod":"PAS-019"},{"nombre":"GRANELLA DI NOCCIOLA PRALINATA","cat":"PASTAS Y BASES","unidad":"0.75 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-020"},{"nombre":"GRANELLA FINE NOCCIOLA PIEMONTE IGP","cat":"PASTAS Y BASES","unidad":"2 kg","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-021"},{"nombre":"GRANFRUTTA FRAGOLA X 5 KG","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-022"},{"nombre":"GRANFRUTTA MANGO ALPHONSO","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-023"},{"nombre":"GRANFRUTTA MARACUJA","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-024"},{"nombre":"GRANFRUTTA PESCA X 5 KG","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-025"},{"nombre":"2.5 KG INSTACRUMBLE AL CACAO SALATO GF","cat":"PASTAS Y BASES","unidad":"2.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-026"},{"nombre":"INSTACRUMBLE NEUTRO","cat":"PASTAS Y BASES","unidad":"2.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-027"},{"nombre":"JOYCREAM AMORENERO 5","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-028"},{"nombre":"JOYCREAM BESAMEMUCHO LT KG5","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-029"},{"nombre":"JOYCREAM CROCCANTISSIMO LT KG 5","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-030"},{"nombre":"JOYCREAM DONATELLO - 5KG","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-031"},{"nombre":"JOYCREAM MILK & COCOA","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-032"},{"nombre":"JOYCREAM PISTACCHIO CROCK LT5 JOYGELATO","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-033"},{"nombre":"JOYCREAM SPECULOOS LT KG 5","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-034"},{"nombre":"JOYFRUIT FRUTTI DI BOSCO LT KG 3.5","cat":"PASTAS Y BASES","unidad":"3.5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-035"},{"nombre":"JOYGELATO CHEESECAKE 1KG","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-036"},{"nombre":"JOYGELATO COCO","cat":"PASTAS Y BASES","unidad":"6 x 1 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-037"},{"nombre":"PASTA GIANDUIA","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-038"},{"nombre":"JOYPASTE NOCCIOLA ITALIA LT KG 3 JOYGELATO","cat":"PASTAS Y BASES","unidad":"4 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-039"},{"nombre":"JOYPASTE PISTACHO GRAN RESERVA","cat":"PASTAS Y BASES","unidad":"2.5 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-040"},{"nombre":"JOYPASTE WHITE CHOCOLATE","cat":"PASTAS Y BASES","unidad":"3 kg","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-041"},{"nombre":"KIT LIMETTA BASE + PASTA + VARIEGATO","cat":"PASTAS Y BASES","unidad":"1.1 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-042"},{"nombre":"LILLY NEUTRO KG 1 X 6","cat":"PASTAS Y BASES","unidad":"1 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-043"},{"nombre":"LILLY CHEESE-KAESE X 1 KG","cat":"PASTAS Y BASES","unidad":"1 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-044"},{"nombre":"LOVERIA PISTACCHIO","cat":"PASTAS Y BASES","unidad":"5.5 kg","marca":"LEAGEL","prov":"LEAGEL SRL","cont":"alba.e@leagel.com","cod":"PAS-045"},{"nombre":"MEC FIBRA PLUS","cat":"PASTAS Y BASES","unidad":"1.8 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-046"},{"nombre":"MECPLUS X 2.5","cat":"PASTAS Y BASES","unidad":"2.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-047"},{"nombre":"MINUETTO FONDENTE SANTO DOMINGO 75% BS KG 2.5 IRCA","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-048"},{"nombre":"MINUETTO FONDENTE SANTO DOMINGO 75% KG 10 IRCA","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-049"},{"nombre":"MISTER NICO PASTA X 4 KG","cat":"PASTAS Y BASES","unidad":"4 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-050"},{"nombre":"NOCCIOLE TRIBOLATE TOSTATE - AVELLANAS TOSTADAS","cat":"PASTAS Y BASES","unidad":"2 kg","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-051"},{"nombre":"PASTA BANANA CON PEZI","cat":"PASTAS Y BASES","unidad":"3 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-052"},{"nombre":"PASTA BISCOTTINO 4.5 KG","cat":"PASTAS Y BASES","unidad":"4.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-053"},{"nombre":"PASTA BUONISSIMO","cat":"PASTAS Y BASES","unidad":"3 kg","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-054"},{"nombre":"PASTA CREMA CHOCOMILKY","cat":"PASTAS Y BASES","unidad":"6 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-055"},{"nombre":"PASTA DE CIOCCOLATO BIANCO","cat":"PASTAS Y BASES","unidad":"3 KG","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-056"},{"nombre":"PASTA FRAGOLA ROSSA","cat":"PASTAS Y BASES","unidad":"3 KG","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-057"},{"nombre":"PASTA GIANDUIA BIANCA","cat":"PASTAS Y BASES","unidad":"4.2 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-058"},{"nombre":"PASTA MANGO ALPHONSO - LEAGEL","cat":"PASTAS Y BASES","unidad":"3.5 kg","marca":"LEAGEL","prov":"LEAGEL SRL","cont":"alba.e@leagel.com","cod":"PAS-059"},{"nombre":"PASTA MENTA","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-060"},{"nombre":"PASTA NOCCIOLA SELECTION MEC3 X 5 KG","cat":"PASTAS Y BASES","unidad":"5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-061"},{"nombre":"PASTA PER COOKIES BLACK 4.5 KG","cat":"PASTAS Y BASES","unidad":"4.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-062"},{"nombre":"PASTA PISTACCHIO 100% SICILIA PREMIUM","cat":"PASTAS Y BASES","unidad":"4 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-063"},{"nombre":"PASTA PRALINE","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-064"},{"nombre":"PASTA SPECULOOS CONCENTRATA","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-065"},{"nombre":"PASTA TIRAMISÚ","cat":"PASTAS Y BASES","unidad":"4.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-066"},{"nombre":"PASTA VANIGLIA PURA TOP X 3.5 KG","cat":"PASTAS Y BASES","unidad":"3.5 kg","marca":"PERNIGOTTI","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-067"},{"nombre":"PASTA WAFERINI VANIGLIA","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-068"},{"nombre":"PASTA ZABAIONE ROMA","cat":"PASTAS Y BASES","unidad":"3 kg","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-069"},{"nombre":"QUELLA","cat":"PASTAS Y BASES","unidad":"6 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-070"},{"nombre":"QUELLA NOCCIOLA PRALINE 6 KG","cat":"PASTAS Y BASES","unidad":"6 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-071"},{"nombre":"QUELLA PISTACCHIO","cat":"PASTAS Y BASES","unidad":"6 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-072"},{"nombre":"QUELLA PISTACCHIO CRUNCHY","cat":"PASTAS Y BASES","unidad":"2.3 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-073"},{"nombre":"QUELLA PISTACCHIO G (SIN AZUCAR) X 6 KG","cat":"PASTAS Y BASES","unidad":"6 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-074"},{"nombre":"QUELLA WHITE","cat":"PASTAS Y BASES","unidad":"6 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-075"},{"nombre":"QUELLA X 23 KG GALILEO","cat":"PASTAS Y BASES","unidad":"23 KG","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-076"},{"nombre":"QUELLO X 6 KG","cat":"PASTAS Y BASES","unidad":"6 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-077"},{"nombre":"SALTY CARAMEL CREAM","cat":"PASTAS Y BASES","unidad":"6 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-078"},{"nombre":"SELEZZIONE FONDENTE BABBI","cat":"PASTAS Y BASES","unidad":"1.8 kg","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-079"},{"nombre":"SOFTIN","cat":"PASTAS Y BASES","unidad":"3.5kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-080"},{"nombre":"STRAWBERRY FRUIT ELIXIR","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-081"},{"nombre":"SUPERGELMIX","cat":"PASTAS Y BASES","unidad":"3 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-082"},{"nombre":"SWEET GUSTO MASCARPONE X 2KG","cat":"PASTAS Y BASES","unidad":"2 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-083"},{"nombre":"TUTTOPAN C10","cat":"PASTAS Y BASES","unidad":"2.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-084"},{"nombre":"YOGHIN","cat":"PASTAS Y BASES","unidad":"1 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-085"},{"nombre":"SALSAS Y VARIEGATOS","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-086"},{"nombre":"BREZEL CREAM","cat":"PASTAS Y BASES","unidad":"4 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-087"},{"nombre":"CAMP. VARIEGATO GIANDUIKROK","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-088"},{"nombre":"CAMP. VARIEGATO NOROKROK","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-089"},{"nombre":"CIOKI AL CACAO CHOCOLATE CALIENTE","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-090"},{"nombre":"COPERTURA PISTACCHIO","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-091"},{"nombre":"COPERTURA STRACCIATELLA","cat":"PASTAS Y BASES","unidad":"5.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-092"},{"nombre":"GALILEO VARIEGATO COOKIES BLACK X 12 KG","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-093"},{"nombre":"GALILEO VARIEGATO FRUTTI BOSCO X 13 KG","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-094"},{"nombre":"JOYCREAM WAFERNUT CLAIR 5","cat":"PASTAS Y BASES","unidad":"","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-095"},{"nombre":"JOYCREAM WAFERNUT NOIR 5","cat":"PASTAS Y BASES","unidad":"5 KG","marca":"IRCA","prov":"MURCOPAN","cont":"josemariano@murcopan.es","cod":"PAS-096"},{"nombre":"PESTO NOCCIOLA CIURI CIURI PASTA","cat":"PASTAS Y BASES","unidad":"2.5 kg","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-097"},{"nombre":"COOKIES LEMON MERINGUE","cat":"PASTAS Y BASES","unidad":"5.5 KG","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-098"},{"nombre":"LOVERIA COCCO","cat":"PASTAS Y BASES","unidad":"5.5 KG","marca":"LEAGEL","prov":"LEAGEL SRL","cont":"alba.e@leagel.com","cod":"PAS-099"},{"nombre":"CIOCCOPISTACCHIO 5KG","cat":"PASTAS Y BASES","unidad":"5 KG","marca":"LEAGEL","prov":"LEAGEL SRL","cont":"alba.e@leagel.com","cod":"PAS-100"},{"nombre":"CRUMBLE PISTACCHIO 2,5 KG","cat":"PASTAS Y BASES","unidad":"2.5 KG","marca":"LEAGEL","prov":"LEAGEL SRL","cont":"alba.e@leagel.com","cod":"PAS-101"},{"nombre":"MECRAPH VARIEGATO","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-102"},{"nombre":"MECROCK PLUS","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-103"},{"nombre":"MISTER NICO VARIEGATO X 4 KG","cat":"PASTAS Y BASES","unidad":"4 KG","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-104"},{"nombre":"MORETTINA PEPITA BIANCA X 5.5 KG","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-105"},{"nombre":"MORETTINA PEPITA X 5.5 KG","cat":"PASTAS Y BASES","unidad":"5.5 KG","marca":"PERNIGOTTI","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-106"},{"nombre":"TOPPING CHOCOLATE","cat":"PASTAS Y BASES","unidad":"","marca":"","prov":"","cont":"","cod":"PAS-107"},{"nombre":"VARIEGATO DUBAI CHOCOLATE","cat":"PASTAS Y BASES","unidad":"5.5 KG","marca":"MEC 3","prov":"Casa Optima","cont":"fabio.caro@casaoptima.com","cod":"PAS-108"},{"nombre":"VARIEGATO GELSO ROSSO 3.5 KG","cat":"PASTAS Y BASES","unidad":"3.5 KG","marca":"CITTA DEL GELATO","prov":"CITTA DEL GELATO SRL","cont":"info@cittadelgelato.it","cod":"PAS-109"},{"nombre":"VARIEGATO PRALINE","cat":"PASTAS Y BASES","unidad":"3 KG","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"PAS-110"},{"nombre":"ACEITE DE OLIVA","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-001"},{"nombre":"CRISTALLINO CIABATTA","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-002"},{"nombre":"GHIACCIO ALIMENTARE GOURMET","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-003"},{"nombre":"GRANAS DE COLORES","cat":"VARIOS","unidad":"0.7 KG","marca":"MAKRO","prov":"MAKRO","cont":"","cod":"VAR-004"},{"nombre":"JAMON COCIDO","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-005"},{"nombre":"JAMON IBERICO","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-006"},{"nombre":"LIQUORE AL CAFFE 1LT","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-007"},{"nombre":"MEDIA BAGUETTE","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-008"},{"nombre":"PANCARE JOLLY CONF. 30 FETTE","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-009"},{"nombre":"PETALS MINI GREEN","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-010"},{"nombre":"PIMIENTA","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-011"},{"nombre":"PROSCIUTTO COTTO A FETTE","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-012"},{"nombre":"PROSCIUTTO CRUDO A QUARTINO A FETTE","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-013"},{"nombre":"SHERRY DRY SACK MEDIUM LIQUOROSO","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-014"},{"nombre":"VINO MALAGA (HELADIN)","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-015"},{"nombre":"TOPPING CARAMELLO","cat":"TOPPINGS","unidad":"1 KG","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"TOP-001"},{"nombre":"TOPPING FRAGOLA","cat":"TOPPINGS","unidad":"1 KG","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"TOP-002"},{"nombre":"TOPPING FRUTTI DI BOSCO","cat":"TOPPINGS","unidad":"1 KG","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"TOP-003"},{"nombre":"TOPPING GIANDUIA","cat":"TOPPINGS","unidad":"1 KG","marca":"BABBI","prov":"BABBI SRL a s.u.","cont":"chiara@babbi.it","cod":"TOP-004"},{"nombre":"VAINILLAS","cat":"TOPPINGS","unidad":"1.6 KG","marca":"MAKRO","prov":"MAKRO","cont":"","cod":"TOP-005"},{"nombre":"NOCCIOLE RICOPERTE DI CIOCCOLATO","cat":"SALSAS Y VARIEGATOS","unidad":"","marca":"","prov":"","cont":"","cod":"SA2-001"},{"nombre":"SAN PELLEGRINO 500 - PLASTICO","cat":"BEBIDAS","unidad":"caja de 24und. de 500ml","marca":"SAN PELLEGRINO","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-001"},{"nombre":"SAN PELLEGRINO 500 - VIDRIO","cat":"BEBIDAS","unidad":"caja de 24und. de 500ml","marca":"SAN PELLEGRINO","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-002"},{"nombre":"AGUA PELLEGRINO 750 - VIDRIO","cat":"BEBIDAS","unidad":"caja de 12und. de 750ml","marca":"SAN PELLEGRINO","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-003"},{"nombre":"AGUA Viladrau 500 ML - PLASTICO","cat":"BEBIDAS","unidad":"caja de 24und. de 500ml","marca":"VERI","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-004"},{"nombre":"AGUA Viladrau 1.5L - PLASTICO","cat":"BEBIDAS","unidad":"caja de 12und. de 1000ml","marca":"VERI","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-005"},{"nombre":"LATAS COCA COLA NORMAL","cat":"BEBIDAS","unidad":"caja de 24und. de 330ml","marca":"COCACOLA","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-006"},{"nombre":"LATAS COCA COLA ZERO","cat":"BEBIDAS","unidad":"caja de 24und. de 330ml","marca":"COCACOLA","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-007"},{"nombre":"LATAS SPRITE","cat":"BEBIDAS","unidad":"caja de 24und. de 330ml","marca":"SPRITE","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-008"},{"nombre":"LECHE SEMIDESNATADA","cat":"BEBIDAS","unidad":"pack de 6und. de 1.5l","marca":"ATO HOSTELERIA","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-009"},{"nombre":"TIA MARIA","cat":"BEBIDAS","unidad":"1 LT","marca":"TIA MARIA","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-010"},{"nombre":"KINA ( 6 X 1 LT)","cat":"BEBIDAS","unidad":"1 LT","marca":"KINA","prov":"EUROESTRELLA","cont":"rutabcnvaris@gmail.com","cod":"BEB-011"},{"nombre":"BOLSA BASURA BLANCA PEQUEÑAS","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 45 rollos","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-001"},{"nombre":"BOLSA BASURA NEGRA GRANDES","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 25 rollos","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-002"},{"nombre":"GUANTES S","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 100und.","marca":"CUATROGASA","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-003"},{"nombre":"GUANTES M","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 100und.","marca":"CUATROGASA","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-004"},{"nombre":"GUANTES L","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 100und.","marca":"CUATROGASA","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-005"},{"nombre":"PAPEL DE MANOS","cat":"ARTICULOS DE LIMPIEZA","unidad":"pack de 6 rollos","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-006"},{"nombre":"PAPEL HIGIENICO","cat":"ARTICULOS DE LIMPIEZA","unidad":"pack de 6 rollos","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-007"},{"nombre":"PRODUCTO WC","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 10und. de 1l","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-008"},{"nombre":"ICE FRESH DESODOR","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 6und. de 0,7l","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-009"},{"nombre":"V75 AMBIENTADOR RECAMBIO (VINFER)","cat":"ARTICULOS DE LIMPIEZA","unidad":"pack 6und.","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-010"},{"nombre":"CAJA BAGINBOX","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 10l","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-011"},{"nombre":"HANDGRAS","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja de 6und. de 1l","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-012"},{"nombre":"DERMO FOAM (jabón para dispensador)","cat":"ARTICULOS DE LIMPIEZA","unidad":"caja 12und. de 0,5l","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-013"},{"nombre":"VALLETAS AZULES","cat":"ARTICULOS DE LIMPIEZA","unidad":"pack de 4und.","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-014"},{"nombre":"VALLETAS VERDES","cat":"ARTICULOS DE LIMPIEZA","unidad":"pack de 4und.","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-015"},{"nombre":"VALLETAS ROJAS","cat":"ARTICULOS DE LIMPIEZA","unidad":"pack de 4und.","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-016"},{"nombre":"TRAPOS PARA CRISTALES","cat":"ARTICULOS DE LIMPIEZA","unidad":"pack 5kg","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-017"},{"nombre":"ESPONJAS","cat":"ARTICULOS DE LIMPIEZA","unidad":"pack 12und.","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-018"},{"nombre":"SANIT IPA","cat":"ARTICULOS DE LIMPIEZA","unidad":"LITROS","marca":"PRODER PHARMA","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-019"},{"nombre":"FOR LAV","cat":"ARTICULOS DE LIMPIEZA","unidad":"LITROS","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-020"},{"nombre":"VITRO","cat":"ARTICULOS DE LIMPIEZA","unidad":"LITROS","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-021"},{"nombre":"SPEED NATUR","cat":"ARTICULOS DE LIMPIEZA","unidad":"LITROS","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-022"},{"nombre":"FOR CHLOR","cat":"ARTICULOS DE LIMPIEZA","unidad":"LITROS","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-023"},{"nombre":"CABEZA DE MOCHO (microfibra 50%)","cat":"ARTICULOS DE LIMPIEZA","unidad":"1und.","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-024"},{"nombre":"CABEZAS DE ESCOBA","cat":"ARTICULOS DE LIMPIEZA","unidad":"1und.","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-025"},{"nombre":"PALOS ESCOBA","cat":"ARTICULOS DE LIMPIEZA","unidad":"1und.","marca":"FORTEX","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-026"},{"nombre":"SACOS DE SAL","cat":"ARTICULOS DE LIMPIEZA","unidad":"SACO 25kg","marca":"Ice Chemical","prov":"Ice Chemical","cont":"xgfernandez@icechemical.com","cod":"ART-027"},{"nombre":"FS GEL.CC 4750 A-PET - VASQUETA CHICA","cat":"BALDES Y VASQUETAS","unidad":"","marca":"","prov":"","cont":"","cod":"BAL-001"},{"nombre":"GELATIERA BASSA LT 5,5 PET - VASQUETA GRANDE","cat":"BALDES Y VASQUETAS","unidad":"","marca":"","prov":"","cont":"","cod":"BAL-002"},{"nombre":"VASCH. S YETI CC 350 CC (1/4 KG)","cat":"BALDES Y VASQUETAS","unidad":"caja de 50und.","marca":"YETI","prov":"Alcas","cont":"diana.garosi@alcas.it","cod":"BAL-003"},{"nombre":"VASCH. YETI GR 1000 XXL - TERMICOS","cat":"BALDES Y VASQUETAS","unidad":"caja de 50und.","marca":"YETI","prov":"Alcas","cont":"diana.garosi@alcas.it","cod":"BAL-004"},{"nombre":"VASCH.YETI GR 500 L - TERMICOS","cat":"BALDES Y VASQUETAS","unidad":"caja de 50und.","marca":"YETI","prov":"Alcas","cont":"diana.garosi@alcas.it","cod":"BAL-005"},{"nombre":"AZUCAR BROWN - NESPRESSO","cat":"CAFES","unidad":"caja de 60und. de 4g","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-001"},{"nombre":"AZUCAR PORCIÓN - NESPRESSO","cat":"CAFES","unidad":"caja de 300und. de 4g","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-002"},{"nombre":"EDULCORANTE PORCION - NESPRESSO","cat":"CAFES","unidad":"caja de 50und. de 0.6g","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-003"},{"nombre":"PALOS REMOVEDORES","cat":"CAFES","unidad":"pack 1000und.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-004"},{"nombre":"CAPSULAS RISTRETTO","cat":"CAFES","unidad":"UND.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-005"},{"nombre":"CAPSULAS LEGGERO","cat":"CAFES","unidad":"UND.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-006"},{"nombre":"CAPSULAS INTENSO","cat":"CAFES","unidad":"UND.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-007"},{"nombre":"CAPSULAS DESCAFEINATO","cat":"CAFES","unidad":"UND.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-008"},{"nombre":"CAPSULAS CARAMELO","cat":"CAFES","unidad":"UND.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-009"},{"nombre":"CAPSULAS VAINILLA","cat":"CAFES","unidad":"UND.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-010"},{"nombre":"PASTILLAS LIMPIEZA CAFETERA (2 sin costo al mes)","cat":"CAFES","unidad":"bote de 62und.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"CAF-011"},{"nombre":"TERMICOS TAKE AWAY 1 KG - (1000cc (1310002100) XXL)","cat":"TERMICOS","unidad":"caja de 50und.","marca":"YETI","prov":"Alcas","cont":"diana.garosi@alcas.it","cod":"TE2-001"},{"nombre":"TERMICOS TAKE AWAY 1/2 KG - (500cc (310002080) L)","cat":"TERMICOS","unidad":"caja de 50und.","marca":"YETI","prov":"Alcas","cont":"diana.garosi@alcas.it","cod":"TE2-002"},{"nombre":"TERMICOS TAKE AWAY 1/4 KG - (350cc (310002010) S)","cat":"TERMICOS","unidad":"caja de 50und.","marca":"YETI","prov":"Alcas","cont":"diana.garosi@alcas.it","cod":"TE2-003"},{"nombre":"LATAS ICEPOP DUBAI","cat":"TERMICOS","unidad":"","marca":"","prov":"","cont":"","cod":"TE2-004"},{"nombre":"CUCHARITAS DE PAPEL PERSONALIZADAS (stenger)","cat":"CUCHARAS","unidad":"x CAJA","marca":"STENGER","prov":"Stenger","cont":"Serafin (682409054)\npedidos@stenger.es","cod":"CUC-001"},{"nombre":"CIALDAS","cat":"CUCURUCHOS","unidad":"x CAJA","marca":"STENGER","prov":"Stenger","cont":"Serafin (682409054)\npedidos@stenger.es","cod":"CU2-001"},{"nombre":"CUCURUCHO GOURMET NOCCIOLA - (Arrotolato pralinato)","cat":"CUCURUCHOS","unidad":"x CAJA","marca":"PRONI","prov":"PRONI","cont":"sales@proni.com\nexport@proni.com","cod":"CU2-002"},{"nombre":"CUCURUCHO GOURMET PISTACCHIO - (Black pistacchio)","cat":"CUCURUCHOS","unidad":"x CAJA","marca":"PRONI","prov":"PRONI","cont":"sales@proni.com\nexport@proni.com","cod":"CU2-003"},{"nombre":"CUCURUCHO GRANDE GOURMET NOCCIOLA - (Gold XL)","cat":"CUCURUCHOS","unidad":"x CAJA","marca":"PRONI","prov":"PRONI","cont":"sales@proni.com\nexport@proni.com","cod":"CU2-004"},{"nombre":"CUCURUCHOGRANDE GOURMET PISTACCHIO - (Black pistacchio XL)","cat":"CUCURUCHOS","unidad":"x CAJA","marca":"PRONI","prov":"PRONI","cont":"sales@proni.com\nexport@proni.com","cod":"CU2-005"},{"nombre":"CUCURUCHO COMUN S (Cono Arielle de 42)","cat":"CUCURUCHOS","unidad":"x CAJA","marca":"STENGER","prov":"Stenger","cont":"Serafin (682409054)","cod":"CU2-006"},{"nombre":"CUCURUCHO COMUN M (Cono Portofino de 45)","cat":"CUCURUCHOS","unidad":"x CAJA","marca":"STENGER","prov":"Stenger","cont":"Serafin (682409054)","cod":"CU2-007"},{"nombre":"CUCURUCHO COMUN L ( Cono Danés Corona de 47)","cat":"CUCURUCHOS","unidad":"x CAJA","marca":"STENGER","prov":"Stenger","cont":"Serafin (682409054)","cod":"CU2-008"},{"nombre":"ROLLY BICOLOR - CUBANITO","cat":"CUCURUCHOS","unidad":"X CAJA 720und.","marca":"PRONI","prov":"PRONI","cont":"sales@proni.com\nexport@proni.com","cod":"CU2-009"},{"nombre":"PORTACONO PEQUEÑO (Stenger)","cat":"POLIPAPEL","unidad":"x CAJA","marca":"STENGER","prov":"Stenger","cont":"Serafin (682409054)","cod":"POL-001"},{"nombre":"PORTACONO GRANDE (Proni)","cat":"POLIPAPEL","unidad":"","marca":"","prov":"","cont":"sales@proni.com\nexport@proni.com","cod":"POL-002"},{"nombre":"SORBETE POLIPAPEL (Canutillo 8x23 negro)","cat":"POLIPAPEL","unidad":"PACK 500und.","marca":"STENGER","prov":"Stenger","cont":"Serafin (682409054)","cod":"POL-003"},{"nombre":"DOMOS VASCHETTA GRANDE (Erreme)","cat":"POLIPAPEL","unidad":"","marca":"Erreme","prov":"Erreme","cont":"Luca - +39 339 724 1173","cod":"POL-004"},{"nombre":"BOLSA PASTELERIA","cat":"POLIPAPEL","unidad":"","marca":"","prov":"","cont":"","cod":"POL-005"},{"nombre":"BOLSA TAKE AWAY","cat":"POLIPAPEL","unidad":"","marca":"","prov":"","cont":"","cod":"POL-006"},{"nombre":"COPA CHICA - (copas S 16/B (Pz. 2250))","cat":"POLIPAPEL","unidad":"x CAJA","marca":"CartoPrint","prov":"CartoPrint","cont":"Laura_Rabaioli@sedagroup.com  \nluca_lolliri@sedagroup.com","cod":"POL-007"},{"nombre":"COPA MEDIA - (copas M 108 (Pz. 2000))","cat":"POLIPAPEL","unidad":"x CAJA","marca":"CartoPrint","prov":"CartoPrint","cont":"Laura_Rabaioli@sedagroup.com  \nluca_lolliri@sedagroup.com","cod":"POL-008"},{"nombre":"COPA GRANDE - (copas L 4/C (Pz. 1400))","cat":"POLIPAPEL","unidad":"x CAJA","marca":"CartoPrint","prov":"CartoPrint","cont":"Laura_Rabaioli@sedagroup.com  \nluca_lolliri@sedagroup.com","cod":"POL-009"},{"nombre":"COPA XL - (copas XL 53/N (Pz. 1260))","cat":"POLIPAPEL","unidad":"x CAJA","marca":"CartoPrint","prov":"CartoPrint","cont":"Laura_Rabaioli@sedagroup.com  \nluca_lolliri@sedagroup.com","cod":"POL-010"},{"nombre":"VASO MILKSHAKE","cat":"POLIPAPEL","unidad":"x CAJA","marca":"SmavPack","prov":"SmavPack","cont":"","cod":"POL-011"},{"nombre":"TAPA MILKSHAKE","cat":"POLIPAPEL","unidad":"x CAJA","marca":"SmavPack","prov":"SmavPack","cont":"","cod":"POL-012"},{"nombre":"VASO 100 ML - CAFÉ - MODELO EXPRESS UNA PARED","cat":"CAFES","unidad":"x CAJA","marca":"LimePack","prov":"LimePack","cont":"samuel@limepack.com","cod":"CAF-012"},{"nombre":"VASO 240 ML - CAFÉ - MODELO EXPRESS UNA PARED","cat":"CAFES","unidad":"x CAJA","marca":"LimePack","prov":"LimePack","cont":"samuel@limepack.com","cod":"CAF-013"},{"nombre":"VASO 350 ML - CAFÉ - MODELO EXPRESS UNA PARED","cat":"CAFES","unidad":"x CAJA","marca":"LimePack","prov":"LimePack","cont":"samuel@limepack.com","cod":"CAF-014"},{"nombre":"TAPA 100 ML CAFÉ","cat":"CAFES","unidad":"x CAJA","marca":"LimePack","prov":"LimePack","cont":"samuel@limepack.com","cod":"CAF-015"},{"nombre":"TAPA 240 ML - CAFÉ","cat":"CAFES","unidad":"x CAJA","marca":"LimePack","prov":"LimePack","cont":"samuel@limepack.com","cod":"CAF-016"},{"nombre":"TAPA 350 ML - CAFÉ","cat":"CAFES","unidad":"x CAJA","marca":"LimePack","prov":"LimePack","cont":"samuel@limepack.com","cod":"CAF-017"},{"nombre":"SERVILLETAS - I LOVE LUCCIANOS -  (tovaglioli st. lucciano´s pz. 18000)","cat":"SERVILLETAS","unidad":"x CAJA","marca":"PRONI","prov":"PRONI","cont":"sales@proni.com\nexport@proni.com","cod":"SER-001"},{"nombre":"BANDAS CIERRA POTES","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-016"},{"nombre":"CAJA PASTELERIA","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-017"},{"nombre":"NESPRESSO PACK descalsificador para limpieza","cat":"VARIOS","unidad":"UND.","marca":"NESPRESSO","prov":"NESPRESSO","cont":"Pedir llamando al 900110020 (num. cliente: 4904333)","cod":"VAR-018"},{"nombre":"MOLDES/SELLOS LABORATORIO","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-019"},{"nombre":"MOLDE ICEPOP FRUTA","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-020"},{"nombre":"MOLDE ICEPOP CLASSIC","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-021"},{"nombre":"MOLDE ICEPOP CUDRICULADO","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-022"},{"nombre":"MOLDE CARA (FIORE)","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-023"},{"nombre":"MOLDE CORAZON","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-024"},{"nombre":"MOLDE TONIO","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-025"},{"nombre":"MOLDE OJOS MINION (SIMPLE)","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-026"},{"nombre":"MOLDE OJOS MINION (DOBLE)","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-027"},{"nombre":"MOLDE NARIZ TONIO","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-028"},{"nombre":"MOLDE TIRABUZON","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-029"},{"nombre":"SELLO ICEPOP I LOVE LUCCIANOS","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-030"},{"nombre":"SELLO ICEPOP 80% CACAO","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-031"},{"nombre":"SELLO LUXURY LUCCIANOS","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-032"},{"nombre":"SELLO CARAMEL GOLD","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-033"},{"nombre":"SELLO ICEPOP DUBAI","cat":"VARIOS","unidad":"","marca":"","prov":"","cont":"","cod":"VAR-034"},{"nombre":"CAMISA AZUL S","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-001"},{"nombre":"CAMISA AZUL M","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-002"},{"nombre":"CAMISA AZUL L","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-003"},{"nombre":"CAMISA AZUL XL","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-004"},{"nombre":"PANTALÓN 36","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-005"},{"nombre":"PANTALÓN 38","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-006"},{"nombre":"PANTALÓN 40","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-007"},{"nombre":"PANTALÓN 42","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-008"},{"nombre":"PANTALÓN 44","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-009"},{"nombre":"PANTALÓN 46","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-010"},{"nombre":"PANTALÓN 48","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-011"},{"nombre":"GORRO","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-012"},{"nombre":"DELANTAL","cat":"UNIFORMES DESPACHANTE","unidad":"","marca":"","prov":"","cont":"","cod":"UNI-013"},{"nombre":"CAMISA BLANCA S","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-001"},{"nombre":"CAMISA BLANCA M","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-002"},{"nombre":"CAMISA BLANCA L","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-003"},{"nombre":"CAMISA BLANCA XL","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-004"},{"nombre":"PANTALÓN 36","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-005"},{"nombre":"PANTALÓN 38","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-006"},{"nombre":"PANTALÓN 40","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-007"},{"nombre":"PANTALÓN 42","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-008"},{"nombre":"PANTALÓN 44","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-009"},{"nombre":"PANTALÓN 46","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-010"},{"nombre":"GORRO","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-011"},{"nombre":"DELANTAL","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-012"},{"nombre":"BUZOS","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-013"},{"nombre":"S","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-014"},{"nombre":"M","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-015"},{"nombre":"L","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-016"},{"nombre":"XL","cat":"UNIFORMES LABORATORIO","unidad":"","marca":"","prov":"","cont":"","cod":"UN2-017"}];
+const LOCALES = ["Barcelona 1","Barcelona 2","Madrid","Valencia","Malaga 1","Malaga 3","Granada","Alicante","Fabrica BCN","Heladin","Roma","Fabrica Como"];
+const PREF_NOMBRE = {}; CATS.forEach(c=>PREF_NOMBRE[c.id]=c.nombre);
+
+/* ====== ESTADO (localStorage) ====== */
+const LS_KEY = 'pedidosLuccianos_v1';
+let DB = cargar();
+function cargar(){
+  try{ const r=localStorage.getItem(LS_KEY); if(r) return JSON.parse(r); }catch(e){}
+  return { pedidos:[], contador:0 };
+}
+function guardar(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(DB)); }catch(e){ toast('No se pudo guardar'); } }
+
+let pedidoActivo = null; // id del pedido abierto
+
+/* ====== HELPERS ====== */
+const $ = s=>document.querySelector(s);
+const $$ = s=>document.querySelectorAll(s);
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('ver'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('ver'),2200); }
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function hoyISO(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function fechaCorta(iso){ const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+function artPorCod(cod){ return ARTS.find(a=>a.cod===cod); }
+function pedidoPorId(id){ return DB.pedidos.find(p=>p.id===id); }
+
+/* ====== NAVEGACIÓN ENTRE PANTALLAS ====== */
+function mostrar(sc){
+  $$('.screen').forEach(s=>s.classList.remove('activo'));
+  $(sc).classList.add('activo');
+  $$('.bottomnav .tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===sc));
+  window.scrollTo(0,0);
+}
+$$('.bottomnav .tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    pedidoActivo=null;
+    topNormal();
+    mostrar('#'+tab.dataset.tab);
+    $('#fab').style.display = (tab.dataset.tab==='scPedidos') ? 'flex' : 'none';
+  });
+});
+function topNormal(){
+  $('#btnBack').style.display='none';
+  $('#tbLogo').style.display='block';
+  $('#tbTitle').textContent='Pedidos Europa';
+  $('#tbSub').style.display='none';
+}
+function topDetalle(p){
+  $('#btnBack').style.display='block';
+  $('#tbLogo').style.display='none';
+  $('#tbTitle').textContent='Pedido N\u00b0 '+p.numero;
+  const s=$('#tbSub'); s.style.display='block'; s.textContent=esc(p.local)+' \u00b7 '+fechaCorta(p.fecha);
+}
+$('#btnBack').addEventListener('click',()=>{ pedidoActivo=null; topNormal(); mostrar('#scPedidos'); $('#fab').style.display='flex'; renderPedidos(); });
+
+/* ====== LISTA DE PEDIDOS ====== */
+function renderPedidos(){
+  const cont=$('#listaPedidos');
+  if(DB.pedidos.length===0){
+    cont.innerHTML='<div class="vacio"><b>Todav\u00eda no hay pedidos</b>Toc\u00e1 el bot\u00f3n + (abajo a la izquierda) para crear el primero.</div>';
+    return;
+  }
+  const ord=[...DB.pedidos].sort((a,b)=>b.numero-a.numero);
+  cont.innerHTML=ord.map(p=>{
+    const n=p.items.reduce((s,i)=>s+i.cantidad,0);
+    return '<div class="card" onclick="abrirPedido(\''+p.id+'\')">'
+      +'<div class="ci"><div class="n">Pedido N\u00b0 '+p.numero+'</div>'
+      +'<div class="m">'+esc(p.local)+' \u00b7 '+fechaCorta(p.fecha)+'</div></div>'
+      +'<div class="badge">'+p.items.length+' art \u00b7 '+n+' u</div>'
+      +'<div class="chev">&#8250;</div></div>';
+  }).join('');
+}
+
+/* ====== NUEVO PEDIDO (FAB) ====== */
+$('#fab').addEventListener('click', nuevoPedido);
+function nuevoPedido(){
+  const opts = LOCALES.map(l=>'<option value="'+esc(l)+'">'+esc(l)+'</option>').join('');
+  abrirModal('Nuevo pedido',
+    '<div class="campo"><label>Local del pedido</label>'
+    +'<select id="mLocal"><option value="" disabled selected>Eleg\u00ed un local\u2026</option>'+opts+'</select></div>'
+    +'<div class="campo"><label>Fecha</label><input type="date" id="mFecha" value="'+hoyISO()+'"></div>'
+    +'<div class="dato">Se asignar\u00e1 el N\u00b0 '+(DB.contador+1)+' (correlativo autom\u00e1tico).</div>'
+    +'<button class="btn" id="mCrear" style="margin-top:14px">Crear pedido</button>');
+  $('#mCrear').addEventListener('click',()=>{
+    const local=$('#mLocal').value; const fecha=$('#mFecha').value||hoyISO();
+    if(!local){ toast('Eleg\u00ed un local'); return; }
+    DB.contador++;
+    const p={ id:'p'+Date.now(), numero:DB.contador, fecha, local, items:[], creado:new Date().toISOString() };
+    DB.pedidos.push(p); guardar(); cerrarModal();
+    abrirPedido(p.id);
+    toast('Pedido N\u00b0 '+p.numero+' creado');
+  });
+}
+
+/* ====== DETALLE DEL PEDIDO ====== */
+function abrirPedido(id){
+  pedidoActivo=id; const p=pedidoPorId(id); if(!p) return;
+  topDetalle(p); mostrar('#scDetalle'); $('#fab').style.display='none';
+  renderDetalle();
+}
+function renderDetalle(){
+  const p=pedidoPorId(pedidoActivo); if(!p) return;
+  const nU=p.items.reduce((s,i)=>s+i.cantidad,0);
+  $('#detResumen').innerHTML=
+    '<div class="r"><span>Local</span><b>'+esc(p.local)+'</b></div>'
+    +'<div class="r"><span>Fecha</span><b>'+fechaCorta(p.fecha)+'</b></div>'
+    +'<div class="r"><span>Art\u00edculos</span><b>'+p.items.length+'</b></div>'
+    +'<div class="r"><span>Unidades totales</span><b>'+nU+'</b></div>';
+  const cont=$('#listaItems');
+  if(p.items.length===0){
+    cont.innerHTML='<div class="vacio"><b>Pedido vac\u00edo</b>Agreg\u00e1 art\u00edculos con el bot\u00f3n de arriba.</div>';
+    $('#accionesExport').style.display='none'; return;
+  }
+  $('#accionesExport').style.display='flex';
+  cont.innerHTML=p.items.map((it,idx)=>{
+    const meta=[];
+    if(it.marca) meta.push('<span class="tag">'+esc(it.marca)+'</span>');
+    if(it.prov) meta.push('<span class="tag">'+esc(it.prov)+'</span>');
+    return '<div class="itemrow">'
+      +'<div class="top"><div class="nm"><div class="nb">'+esc(it.nombre)+'</div>'
+      +'<div class="cd">'+it.cod+' \u00b7 '+esc(PREF_NOMBRE[it.cat]||it.cat)+'</div></div>'
+      +'<button class="del" onclick="borrarItem('+idx+')">Quitar</button></div>'
+      +(meta.length?'<div class="meta">'+meta.join('')+'</div>':'')
+      +'<div class="stepper">'
+      +'<button onclick="cant('+idx+',-1)">\u2212</button>'
+      +'<input class="val" type="number" inputmode="numeric" min="1" value="'+it.cantidad+'" onchange="cantSet('+idx+',this.value)">'
+      +'<button onclick="cant('+idx+',1)">+</button>'
+      +'<span class="um">'+(it.unidad?esc(it.unidad):'unidad')+'</span></div>'
+      +'</div>';
+  }).join('');
+}
+function cant(idx,d){ const p=pedidoPorId(pedidoActivo); const it=p.items[idx]; it.cantidad=Math.max(1,it.cantidad+d); guardar(); renderDetalle(); }
+function cantSet(idx,v){ const p=pedidoPorId(pedidoActivo); const it=p.items[idx]; let n=parseInt(v,10); if(isNaN(n)||n<1)n=1; it.cantidad=n; guardar(); renderDetalle(); }
+function borrarItem(idx){ const p=pedidoPorId(pedidoActivo); p.items.splice(idx,1); guardar(); renderDetalle(); }
+
+/* ====== AGREGAR ARTÍCULO (lista desplegable con buscador) ====== */
+$('#btnAddArt').addEventListener('click', abrirPicker);
+function abrirPicker(){
+  abrirModal('Agregar art\u00edculo',
+    '<div class="searchbar"><span class="ic">&#128269;</span>'
+    +'<input id="pkBuscar" type="search" placeholder="Buscar por nombre, c\u00f3digo o marca" autocomplete="off" autofocus></div>'
+    +'<div class="pickres" id="pkRes"></div>');
+  const inp=$('#pkBuscar');
+  inp.addEventListener('input',()=>renderPicker(inp.value));
+  renderPicker('');
+}
+function renderPicker(q){
+  q=(q||'').trim().toLowerCase();
+  const p=pedidoPorId(pedidoActivo);
+  const yaCods=new Set(p.items.map(i=>i.cod));
+  let lista=ARTS;
+  if(q){
+    lista=ARTS.filter(a=>
+      a.nombre.toLowerCase().includes(q) ||
+      a.cod.toLowerCase().includes(q) ||
+      (a.marca&&a.marca.toLowerCase().includes(q)) ||
+      (PREF_NOMBRE[a.cat]||'').toLowerCase().includes(q)
+    );
+  }
+  lista=lista.slice(0,80);
+  const cont=$('#pkRes');
+  if(lista.length===0){ cont.innerHTML='<div class="none">Sin resultados para \u201c'+esc(q)+'\u201d</div>'; return; }
+  cont.innerHTML=lista.map(a=>{
+    const ya=yaCods.has(a.cod);
+    const sub=[a.cod, PREF_NOMBRE[a.cat]||a.cat]; if(a.unidad)sub.push(a.unidad);
+    return '<div class="opt" onclick="agregarArt(\''+a.cod+'\')">'
+      +'<div class="info"><div class="nb">'+esc(a.nombre)+'</div>'
+      +'<div class="sub">'+esc(sub.join(' \u00b7 '))+(ya?' \u00b7 <span class="yaesta">ya agregado</span>':'')+'</div></div>'
+      +'<div class="plus">+</div></div>';
+  }).join('');
+}
+function agregarArt(cod){
+  const p=pedidoPorId(pedidoActivo); const a=artPorCod(cod); if(!a) return;
+  const ex=p.items.find(i=>i.cod===cod);
+  if(ex){ ex.cantidad++; toast(esc(a.nombre)+' +1'); }
+  else{
+    p.items.push({ cod:a.cod, nombre:a.nombre, cat:a.cat, unidad:a.unidad, marca:a.marca, prov:a.prov, cont:a.cont, cantidad:1 });
+    toast('Agregado: '+a.nombre);
+  }
+  guardar();
+  // refrescar marca "ya agregado" sin cerrar el buscador
+  const inp=$('#pkBuscar'); if(inp) renderPicker(inp.value);
+  renderDetalle();
+}
+
+/* ====== CATÁLOGO ====== */
+function renderCatalogo(q){
+  q=(q||'').trim().toLowerCase();
+  let lista=ARTS;
+  if(q){
+    lista=ARTS.filter(a=>
+      a.nombre.toLowerCase().includes(q)||a.cod.toLowerCase().includes(q)||
+      (a.marca&&a.marca.toLowerCase().includes(q))||(PREF_NOMBRE[a.cat]||'').toLowerCase().includes(q));
+  }
+  const cont=$('#listaCatalogo');
+  if(lista.length===0){ cont.innerHTML='<div class="vacio"><b>Sin resultados</b></div>'; return; }
+  let html=''; let catActual=null;
+  lista.forEach(a=>{
+    if(a.cat!==catActual){ catActual=a.cat; html+='<div class="cathead">'+esc(PREF_NOMBRE[a.cat]||a.cat)+'</div>'; }
+    const l2=[]; if(a.marca)l2.push(esc(a.marca)); if(a.prov)l2.push(esc(a.prov)); if(a.unidad)l2.push(esc(a.unidad));
+    html+='<div class="catart"><div class="l1"><span class="nb">'+esc(a.nombre)+'</span><span class="cd">'+a.cod+'</span></div>'
+      +(l2.length?'<div class="l2">'+l2.join(' \u00b7 ')+'</div>':'')+'</div>';
+  });
+  cont.innerHTML=html;
+}
+$('#buscarCat').addEventListener('input',e=>renderCatalogo(e.target.value));
+
+/* ====== MODAL ====== */
+function abrirModal(tit,bodyHTML){ $('#modalTit').textContent=tit; $('#modalBody').innerHTML=bodyHTML; $('#modal').classList.add('abierto'); }
+function cerrarModal(){ $('#modal').classList.remove('abierto'); }
+$('#modalX').addEventListener('click',cerrarModal);
+$('#modal').addEventListener('click',e=>{ if(e.target===$('#modal')) cerrarModal(); });
+
+/* ====== EXPORTAR ====== */
+$('#btnExcel').addEventListener('click',()=>{ const p=pedidoPorId(pedidoActivo); exportarExcel(p,true); });
+$('#btnMail').addEventListener('click',()=>{ const p=pedidoPorId(pedidoActivo); enviarMail(p); });
+
+function nombreArchivo(p){ return 'Pedido_'+p.numero+'_'+esc(p.local).replace(/[^a-zA-Z0-9]/g,'')+'_'+p.fecha.replace(/-/g,'')+'.xlsx'; }
+
+async function exportarExcel(p, compartir){
+  const blob = construirXLSX(p);
+  const fname = nombreArchivo(p);
+  if(compartir && navigator.canShare){
+    const file=new File([blob],fname,{type:blob.type});
+    if(navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], title:'Pedido N\u00b0 '+p.numero, text:'Pedido N\u00b0 '+p.numero+' \u2013 '+p.local}); return; }
+      catch(e){ if(e&&e.name==='AbortError') return; }
+    }
+  }
+  descargar(blob,fname); toast('Excel generado');
+}
+function descargar(blob,fname){
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=fname; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },1500);
+}
+function enviarMail(p){
+  // texto resumen + adjuntar el excel via share si se puede
+  let cuerpo='Pedido N\u00b0 '+p.numero+'%0D%0ALocal: '+encodeURIComponent(p.local)+'%0D%0AFecha: '+fechaCorta(p.fecha)+'%0D%0A%0D%0A';
+  p.items.forEach(i=>{ cuerpo+=encodeURIComponent('- '+i.nombre+' ('+i.cod+'): '+i.cantidad+' '+(i.unidad||'u'))+'%0D%0A'; });
+  cuerpo+='%0D%0A(Adjunt\u00e1 el Excel exportado con el formato de la planilla.)';
+  const asunto=encodeURIComponent('Pedido N\u00b0 '+p.numero+' \u2013 '+p.local);
+  // primero ofrecemos compartir el archivo (mejor en celu); si cancela/queda, abrimos mail
+  exportarExcel(p,true).then(()=>{});
+  window.location.href='mailto:?subject='+asunto+'&body='+cuerpo;
+}
+
+/* ====== GENERADOR XLSX PROPIO (sin librerías) ======
+   Produce un .xlsx con el formato de las hojas "Pedido XXX":
+   encabezado negro + columnas MATERIA PRIMA | Cantidad | Unidad | Marca | Proveedor | Contacto | Fecha pedido
+*/
+function construirXLSX(p){
+  const cols=['MATERIA PRIMA','Cantidad','Unidad de medida','Marca','Proveedor','Contacto','Fecha pedido'];
+  // filas: meta + header + items
+  const rows=[];
+  rows.push(['Pedido N\u00b0 '+p.numero,'','','','','','']);
+  rows.push(['Local',p.local,'','','','','']);
+  rows.push(['Fecha',fechaCorta(p.fecha),'','','','','']);
+  rows.push(['','','','','','','']);
+  rows.push(cols);
+  p.items.forEach(i=>{
+    rows.push([i.nombre, i.cantidad, i.unidad||'', i.marca||'', i.prov||'', i.cont||'', fechaCorta(p.fecha)]);
+  });
+  const headerRowIdx = 5; // 1-based, fila de cols
+  const sheetXml = filasAsheetXML(rows, headerRowIdx);
+  return zipXLSX(sheetXml);
+}
+function colLetra(n){ let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
+function xmlEsc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])); }
+function filasAsheetXML(rows, headerRowIdx){
+  let body='';
+  rows.forEach((row,r)=>{
+    const rn=r+1; let cells='';
+    row.forEach((val,c)=>{
+      if(val===''||val===null||val===undefined) return;
+      const ref=colLetra(c+1)+rn;
+      let style=0;
+      if(rn===headerRowIdx) style=1;            // header negro
+      else if(rn<headerRowIdx && c===0) style=2; // etiquetas meta (negrita)
+      if(typeof val==='number'){
+        cells+='<c r="'+ref+'" s="'+style+'"><v>'+val+'</v></c>';
+      }else{
+        cells+='<c r="'+ref+'" s="'+style+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(val)+'</t></is></c>';
+      }
+    });
+    body+='<row r="'+rn+'">'+cells+'</row>';
+  });
+  const cols='<cols>'
+    +'<col min="1" max="1" width="42" customWidth="1"/>'
+    +'<col min="2" max="2" width="10" customWidth="1"/>'
+    +'<col min="3" max="3" width="18" customWidth="1"/>'
+    +'<col min="4" max="4" width="16" customWidth="1"/>'
+    +'<col min="5" max="5" width="22" customWidth="1"/>'
+    +'<col min="6" max="6" width="28" customWidth="1"/>'
+    +'<col min="7" max="7" width="13" customWidth="1"/></cols>';
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    +'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    +cols+'<sheetData>'+body+'</sheetData></worksheet>';
+}
+const STYLES_XML='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
++'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
++'<fonts count="3">'
++'<font><sz val="11"/><name val="Calibri"/></font>'
++'<font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font>'
++'<font><b/><sz val="11"/><name val="Calibri"/></font></fonts>'
++'<fills count="3">'
++'<fill><patternFill patternType="none"/></fill>'
++'<fill><patternFill patternType="gray125"/></fill>'
++'<fill><patternFill patternType="solid"><fgColor rgb="FF000000"/></patternFill></fill></fills>'
++'<borders count="2"><border/>'
++'<border><left style="thin"><color rgb="FFCCCCCC"/></left><right style="thin"><color rgb="FFCCCCCC"/></right><top style="thin"><color rgb="FFCCCCCC"/></top><bottom style="thin"><color rgb="FFCCCCCC"/></bottom></border></borders>'
++'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
++'<cellXfs count="3">'
++'<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'                                  /* 0 normal */
++'<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1"><alignment vertical="center"/></xf>' /* 1 header negro */
++'<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'                    /* 2 etiqueta negrita */
++'</cellXfs>'
++'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+
+function zipXLSX(sheetXml){
+  const files=[
+    ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+    ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Pedido" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+    ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+    ['xl/styles.xml',STYLES_XML],
+    ['xl/worksheets/sheet1.xml',sheetXml]
+  ];
+  return crearZip(files);
+}
+
+/* ---- ZIP (método STORE, sin compresión) + CRC32 ---- */
+const CRC_TABLE=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[n]=c>>>0; } return t; })();
+function crc32(bytes){ let c=0xFFFFFFFF; for(let i=0;i<bytes.length;i++) c=CRC_TABLE[(c^bytes[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function strBytes(s){ return new TextEncoder().encode(s); }
+function crearZip(files){
+  const enc=files.map(([name,content])=>{ const data=strBytes(content); return { nameB:strBytes(name), data, crc:crc32(data) }; });
+  const chunks=[]; let offset=0; const central=[];
+  function u16(n){ return [n&0xFF,(n>>8)&0xFF]; } function u32(n){ return [n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>24)&0xFF]; }
+  enc.forEach(f=>{
+    const local=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(f.crc),u32(f.data.length),u32(f.data.length),u16(f.nameB.length),u16(0));
+    const lh=new Uint8Array(local.length+f.nameB.length); lh.set(local,0); lh.set(f.nameB,local.length);
+    chunks.push(lh); chunks.push(f.data);
+    const cen=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(f.crc),u32(f.data.length),u32(f.data.length),u16(f.nameB.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset));
+    const ch=new Uint8Array(cen.length+f.nameB.length); ch.set(cen,0); ch.set(f.nameB,cen.length);
+    central.push(ch); offset+=lh.length+f.data.length;
+  });
+  let cenSize=0; central.forEach(c=>cenSize+=c.length); const cenOffset=offset;
+  central.forEach(c=>chunks.push(c));
+  const eocd=[].concat(u32(0x06054b50),u16(0),u16(0),u16(enc.length),u16(enc.length),u32(cenSize),u32(cenOffset),u16(0));
+  chunks.push(new Uint8Array(eocd));
+  let total=0; chunks.forEach(c=>total+=c.length); const out=new Uint8Array(total); let pos=0;
+  chunks.forEach(c=>{ out.set(c,pos); pos+=c.length; });
+  return new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+/* ====== BACKUP / RESTORE ====== */
+$('#btnExportData').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  descargar(blob,'backup_pedidos_luccianos_'+hoyISO().replace(/-/g,'')+'.json'); toast('Backup generado');
+});
+$('#btnImportData').addEventListener('click',()=>$('#fileImport').click());
+$('#fileImport').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=()=>{ try{ const d=JSON.parse(rd.result); if(d&&Array.isArray(d.pedidos)){ DB=d; if(typeof DB.contador!=='number'){ DB.contador=DB.pedidos.reduce((m,p)=>Math.max(m,p.numero||0),0); } guardar(); refrescarTodo(); toast('Backup restaurado'); } else toast('Archivo inv\u00e1lido'); }catch(err){ toast('No se pudo leer el archivo'); } };
+  rd.readAsText(f); e.target.value='';
+});
+
+/* ====== ANTI-ZOOM doble tap ====== */
+let lastTouch=0;
+document.addEventListener('touchend',e=>{ const now=Date.now(); if(now-lastTouch<=300){ e.preventDefault(); } lastTouch=now; }, {passive:false});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+
+/* ====== INIT ====== */
+function refrescarTodo(){
+  renderPedidos(); renderCatalogo($('#buscarCat').value);
+  $('#nArt').textContent=ARTS.length; $('#nCat').textContent=CATS.length;
+  $('#infPedidos').textContent=DB.pedidos.length;
+  $('#infContador').textContent=DB.contador||'\u2014';
+}
+refrescarTodo();
+$('#fab').style.display='flex';
+
+/* ====== SERVICE WORKER ====== */
+if('serviceWorker' in navigator){
+  // ¿ya había un SW controlando? (en la primera instalación, no recargamos)
+  const teniaControl = !!navigator.serviceWorker.controller;
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      reg.update();                          // fuerza chequear si hay versión nueva
+      setInterval(()=>reg.update(), 60*60*1000); // y revisa cada 1 h si queda abierta
+    }).catch(()=>{});
+  });
+  let recargando=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(!teniaControl || recargando) return;  // evita recargar en la 1ra instalación y los loops
+    recargando=true; window.location.reload();
+  });
+}
+</script>
+</body>
+</html>
