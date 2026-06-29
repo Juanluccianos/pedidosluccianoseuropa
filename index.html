@@ -175,9 +175,17 @@ h2.tit{font-size:18px; margin:4px 2px 12px; font-weight:700;}
 .pickres .opt .info{flex:1; min-width:0;}
 .pickres .opt .info .nb{font-weight:600; font-size:14px;}
 .pickres .opt .info .sub{font-size:12px; color:var(--tenue); margin-top:2px;}
-.pickres .opt .plus{width:34px; height:34px; border-radius:50%; background:var(--negro); color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.pickres .opt .qtyin{width:54px; height:40px; text-align:center; border:1px solid var(--linea); border-radius:9px; font-weight:700; font-size:16px; -moz-appearance:textfield; flex-shrink:0; background:#fff;}
+.pickres .opt .qtyin:focus{border-color:var(--negro); outline:none;}
+.pickres .opt .qtyin::-webkit-outer-spin-button,.pickres .opt .qtyin::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+.pickres .opt .plus{width:40px; height:40px; border-radius:50%; background:var(--negro); color:#fff; font-size:24px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.pickres .opt .plus:active{transform:scale(.92);}
 .pickres .none{text-align:center; color:var(--tenue); padding:30px 10px; font-size:14px;}
 .yaesta{font-size:11px; color:var(--ok); font-weight:700;}
+.estCerrado{color:var(--rojo);} .estAbierto{color:var(--ok);}
+.pillcerrado{display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#fff; background:var(--rojo); border-radius:999px; padding:1px 7px; vertical-align:middle; margin-left:4px;}
+.lockmsg{background:var(--gris); border-radius:11px; padding:11px 13px; font-size:13px; color:#444; margin-bottom:10px; text-align:center; line-height:1.45;}
+.itemrow .qtyfix{font-weight:700; font-size:15px; white-space:nowrap; color:var(--texto);}
 
 /* toast */
 .toast{
@@ -224,6 +232,7 @@ h2.tit{font-size:18px; margin:4px 2px 12px; font-weight:700;}
       <button class="btn sec" id="btnExcel">Exportar Excel</button>
       <button class="btn" id="btnMail">Enviar por mail</button>
     </div>
+    <div id="estadoAcciones" style="margin-top:10px"></div>
   </section>
 
   <!-- PANTALLA: catálogo -->
@@ -350,8 +359,10 @@ function renderPedidos(){
   const ord=[...DB.pedidos].sort((a,b)=>b.numero-a.numero);
   cont.innerHTML=ord.map(p=>{
     const n=p.items.reduce((s,i)=>s+i.cantidad,0);
+    const cerrado=p.estado==='cerrado';
     return '<div class="card" onclick="abrirPedido(\''+p.id+'\')">'
-      +'<div class="ci"><div class="n">Pedido N\u00b0 '+p.numero+'</div>'
+      +'<div class="ci"><div class="n">Pedido N\u00b0 '+p.numero
+      +(cerrado?' <span class="pillcerrado">cerrado</span>':'')+'</div>'
       +'<div class="m">'+esc(p.local)+' \u00b7 '+fechaCorta(p.fecha)+'</div></div>'
       +'<div class="badge">'+p.items.length+' art \u00b7 '+n+' u</div>'
       +'<div class="chev">&#8250;</div></div>';
@@ -372,7 +383,7 @@ function nuevoPedido(){
     const local=$('#mLocal').value; const fecha=$('#mFecha').value||hoyISO();
     if(!local){ toast('Eleg\u00ed un local'); return; }
     DB.contador++;
-    const p={ id:'p'+Date.now(), numero:DB.contador, fecha, local, items:[], creado:new Date().toISOString() };
+    const p={ id:'p'+Date.now(), numero:DB.contador, fecha, local, items:[], estado:'abierto', creado:new Date().toISOString() };
     DB.pedidos.push(p); guardar(); cerrarModal();
     abrirPedido(p.id);
     toast('Pedido N\u00b0 '+p.numero+' creado');
@@ -387,38 +398,79 @@ function abrirPedido(id){
 }
 function renderDetalle(){
   const p=pedidoPorId(pedidoActivo); if(!p) return;
+  const cerrado = p.estado==='cerrado';
   const nU=p.items.reduce((s,i)=>s+i.cantidad,0);
   $('#detResumen').innerHTML=
     '<div class="r"><span>Local</span><b>'+esc(p.local)+'</b></div>'
     +'<div class="r"><span>Fecha</span><b>'+fechaCorta(p.fecha)+'</b></div>'
+    +'<div class="r"><span>Estado</span><b>'+(cerrado?'<span class="estCerrado">Cerrado</span>':'<span class="estAbierto">Abierto</span>')+'</b></div>'
     +'<div class="r"><span>Art\u00edculos</span><b>'+p.items.length+'</b></div>'
     +'<div class="r"><span>Unidades totales</span><b>'+nU+'</b></div>';
+  $('#btnAddArt').style.display = cerrado ? 'none' : 'flex';
   const cont=$('#listaItems');
   if(p.items.length===0){
     cont.innerHTML='<div class="vacio"><b>Pedido vac\u00edo</b>Agreg\u00e1 art\u00edculos con el bot\u00f3n de arriba.</div>';
-    $('#accionesExport').style.display='none'; return;
+    $('#accionesExport').style.display='none';
+    $('#estadoAcciones').innerHTML='';
+    return;
   }
   $('#accionesExport').style.display='flex';
   cont.innerHTML=p.items.map((it,idx)=>{
     const meta=[];
     if(it.marca) meta.push('<span class="tag">'+esc(it.marca)+'</span>');
     if(it.prov) meta.push('<span class="tag">'+esc(it.prov)+'</span>');
-    return '<div class="itemrow">'
-      +'<div class="top"><div class="nm"><div class="nb">'+esc(it.nombre)+'</div>'
+    const cab='<div class="top"><div class="nm"><div class="nb">'+esc(it.nombre)+'</div>'
       +'<div class="cd">'+it.cod+' \u00b7 '+esc(PREF_NOMBRE[it.cat]||it.cat)+'</div></div>'
-      +'<button class="del" onclick="borrarItem('+idx+')">Quitar</button></div>'
-      +(meta.length?'<div class="meta">'+meta.join('')+'</div>':'')
-      +'<div class="stepper">'
+      +(cerrado
+        ? '<div class="qtyfix">'+it.cantidad+' '+(it.unidad?esc(it.unidad):'u')+'</div>'
+        : '<button class="del" onclick="borrarItem('+idx+')">Quitar</button>')
+      +'</div>';
+    const pie = cerrado ? '' :
+      '<div class="stepper">'
       +'<button onclick="cant('+idx+',-1)">\u2212</button>'
       +'<input class="val" type="number" inputmode="numeric" min="1" value="'+it.cantidad+'" onchange="cantSet('+idx+',this.value)">'
       +'<button onclick="cant('+idx+',1)">+</button>'
-      +'<span class="um">'+(it.unidad?esc(it.unidad):'unidad')+'</span></div>'
-      +'</div>';
+      +'<span class="um">'+(it.unidad?esc(it.unidad):'unidad')+'</span></div>';
+    return '<div class="itemrow">'+cab
+      +(meta.length?'<div class="meta">'+meta.join('')+'</div>':'')
+      +pie+'</div>';
   }).join('');
+  // acciones de estado (cerrar / reabrir)
+  if(cerrado){
+    $('#estadoAcciones').innerHTML=
+      '<div class="lockmsg">\uD83D\uDD12 Pedido cerrado. No se puede editar. Reabrilo si necesit\u00e1s corregir algo.</div>'
+      +'<button class="btn sec" onclick="reabrirPedido()">Reabrir pedido</button>';
+  }else{
+    $('#estadoAcciones').innerHTML='<button class="btn" onclick="cerrarPedido()">Cerrar pedido</button>';
+  }
 }
-function cant(idx,d){ const p=pedidoPorId(pedidoActivo); const it=p.items[idx]; it.cantidad=Math.max(1,it.cantidad+d); guardar(); renderDetalle(); }
-function cantSet(idx,v){ const p=pedidoPorId(pedidoActivo); const it=p.items[idx]; let n=parseInt(v,10); if(isNaN(n)||n<1)n=1; it.cantidad=n; guardar(); renderDetalle(); }
-function borrarItem(idx){ const p=pedidoPorId(pedidoActivo); p.items.splice(idx,1); guardar(); renderDetalle(); }
+function cant(idx,d){ const p=pedidoPorId(pedidoActivo); if(p.estado==='cerrado')return; const it=p.items[idx]; it.cantidad=Math.max(1,it.cantidad+d); guardar(); renderDetalle(); }
+function cantSet(idx,v){ const p=pedidoPorId(pedidoActivo); if(p.estado==='cerrado')return; const it=p.items[idx]; let n=parseInt(v,10); if(isNaN(n)||n<1)n=1; it.cantidad=n; guardar(); renderDetalle(); }
+function borrarItem(idx){ const p=pedidoPorId(pedidoActivo); if(p.estado==='cerrado')return; p.items.splice(idx,1); guardar(); renderDetalle(); }
+
+function confirmar(titulo,texto,onSi,txtSi){
+  abrirModal(titulo,
+    '<p style="margin:0 0 16px;color:#444;font-size:14px;line-height:1.5">'+texto+'</p>'
+    +'<button class="btn" id="cfSi">'+(txtSi||'Confirmar')+'</button>'
+    +'<button class="btn gris" id="cfNo" style="margin-top:8px">Cancelar</button>');
+  $('#cfSi').onclick=()=>{ cerrarModal(); onSi(); };
+  $('#cfNo').onclick=cerrarModal;
+}
+function cerrarPedido(){
+  const p=pedidoPorId(pedidoActivo);
+  if(p.items.length===0){ toast('Agreg\u00e1 al menos un art\u00edculo'); return; }
+  confirmar('Cerrar pedido',
+    'Una vez cerrado, el pedido <b>no se puede editar</b>. Vas a poder exportarlo y enviarlo igual, y reabrirlo si necesit\u00e1s corregir algo.',
+    ()=>{ p.estado='cerrado'; guardar(); renderDetalle(); toast('Pedido N\u00b0 '+p.numero+' cerrado'); },
+    'Cerrar pedido');
+}
+function reabrirPedido(){
+  const p=pedidoPorId(pedidoActivo);
+  confirmar('Reabrir pedido',
+    'El pedido vuelve a quedar editable. Acord\u00e1te de cerrarlo de nuevo cuando termines.',
+    ()=>{ p.estado='abierto'; guardar(); renderDetalle(); toast('Pedido N\u00b0 '+p.numero+' reabierto'); },
+    'Reabrir');
+}
 
 /* ====== AGREGAR ARTÍCULO (lista desplegable con buscador) ====== */
 $('#btnAddArt').addEventListener('click', abrirPicker);
@@ -450,22 +502,28 @@ function renderPicker(q){
   cont.innerHTML=lista.map(a=>{
     const ya=yaCods.has(a.cod);
     const sub=[a.cod, PREF_NOMBRE[a.cat]||a.cat]; if(a.unidad)sub.push(a.unidad);
-    return '<div class="opt" onclick="agregarArt(\''+a.cod+'\')">'
-      +'<div class="info"><div class="nb">'+esc(a.nombre)+'</div>'
+    return '<div class="opt">'
+      +'<div class="info" onclick="agregarArt(\''+a.cod+'\')"><div class="nb">'+esc(a.nombre)+'</div>'
       +'<div class="sub">'+esc(sub.join(' \u00b7 '))+(ya?' \u00b7 <span class="yaesta">ya agregado</span>':'')+'</div></div>'
-      +'<div class="plus">+</div></div>';
+      +'<input class="qtyin" id="qty_'+a.cod+'" type="number" inputmode="numeric" min="1" value="1" '
+      +'onclick="event.stopPropagation()" onkeydown="if(event.key===\'Enter\')agregarArt(\''+a.cod+'\')">'
+      +'<div class="plus" onclick="agregarArt(\''+a.cod+'\')">+</div></div>';
   }).join('');
 }
 function agregarArt(cod){
   const p=pedidoPorId(pedidoActivo); const a=artPorCod(cod); if(!a) return;
+  if(p.estado==='cerrado'){ toast('El pedido est\u00e1 cerrado'); return; }
+  const el=document.getElementById('qty_'+cod);
+  let qty = el ? parseInt(el.value,10) : 1;
+  if(isNaN(qty)||qty<1) qty=1;
   const ex=p.items.find(i=>i.cod===cod);
-  if(ex){ ex.cantidad++; toast(esc(a.nombre)+' +1'); }
+  if(ex){ ex.cantidad+=qty; toast(esc(a.nombre)+' +'+qty); }
   else{
-    p.items.push({ cod:a.cod, nombre:a.nombre, cat:a.cat, unidad:a.unidad, marca:a.marca, prov:a.prov, cont:a.cont, cantidad:1 });
-    toast('Agregado: '+a.nombre);
+    p.items.push({ cod:a.cod, nombre:a.nombre, cat:a.cat, unidad:a.unidad, marca:a.marca, prov:a.prov, cont:a.cont, cantidad:qty });
+    toast('Agregado: '+a.nombre+(qty>1?' ('+qty+')':''));
   }
   guardar();
-  // refrescar marca "ya agregado" sin cerrar el buscador
+  // refrescar marca "ya agregado" sin cerrar el buscador (resetea cantidades a 1)
   const inp=$('#pkBuscar'); if(inp) renderPicker(inp.value);
   renderDetalle();
 }
@@ -522,14 +580,46 @@ function descargar(blob,fname){
   setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },1500);
 }
 function enviarMail(p){
-  // texto resumen + adjuntar el excel via share si se puede
-  let cuerpo='Pedido N\u00b0 '+p.numero+'%0D%0ALocal: '+encodeURIComponent(p.local)+'%0D%0AFecha: '+fechaCorta(p.fecha)+'%0D%0A%0D%0A';
-  p.items.forEach(i=>{ cuerpo+=encodeURIComponent('- '+i.nombre+' ('+i.cod+'): '+i.cantidad+' '+(i.unidad||'u'))+'%0D%0A'; });
-  cuerpo+='%0D%0A(Adjunt\u00e1 el Excel exportado con el formato de la planilla.)';
-  const asunto=encodeURIComponent('Pedido N\u00b0 '+p.numero+' \u2013 '+p.local);
-  // primero ofrecemos compartir el archivo (mejor en celu); si cancela/queda, abrimos mail
-  exportarExcel(p,true).then(()=>{});
-  window.location.href='mailto:?subject='+asunto+'&body='+cuerpo;
+  abrirModal('Enviar pedido por mail',
+    '<p style="margin:0 0 14px;color:#444;font-size:14px;line-height:1.5">Primero se genera el Excel del pedido. Eleg\u00ed por d\u00f3nde enviarlo:</p>'
+    +'<button class="btn" onclick="envioCompartir()">\uD83D\uDCCE Compartir archivo</button>'
+    +'<button class="btn sec" style="margin-top:8px" onclick="envioProveedor(\'gmail\')">Gmail</button>'
+    +'<button class="btn sec" style="margin-top:8px" onclick="envioProveedor(\'outlook\')">Outlook</button>'
+    +'<button class="btn sec" style="margin-top:8px" onclick="envioProveedor(\'mailto\')">Otra app de mail</button>'
+    +'<p class="dato" style="margin-top:14px;line-height:1.5"><b>Compartir archivo</b> adjunta el Excel solo (lo mejor en el celular). En Gmail/Outlook/otra app el texto va prearmado, pero el Excel descargado lo adjunt\u00e1s a mano.</p>');
+}
+function mailAsuntoCuerpo(p){
+  const asunto='Pedido N\u00b0 '+p.numero+' \u2013 '+p.local;
+  let cuerpo='Pedido N\u00b0 '+p.numero+'\nLocal: '+p.local+'\nFecha: '+fechaCorta(p.fecha)+'\n\n';
+  p.items.forEach(i=>{ cuerpo+='- '+i.nombre+' ('+i.cod+'): '+i.cantidad+' '+(i.unidad||'u')+'\n'; });
+  cuerpo+='\n(Adjunto el Excel del pedido con el formato de la planilla.)';
+  return {asunto,cuerpo};
+}
+async function envioCompartir(){
+  const p=pedidoPorId(pedidoActivo); cerrarModal();
+  const blob=construirXLSX(p); const fname=nombreArchivo(p);
+  if(navigator.canShare){
+    const file=new File([blob],fname,{type:blob.type});
+    if(navigator.canShare({files:[file]})){
+      try{ const {asunto,cuerpo}=mailAsuntoCuerpo(p); await navigator.share({files:[file],title:asunto,text:cuerpo}); return; }
+      catch(e){ if(e&&e.name==='AbortError') return; }
+    }
+  }
+  descargar(blob,fname); toast('Tu dispositivo no permite compartir; descargu\u00e9 el Excel');
+}
+function envioProveedor(prov){
+  const p=pedidoPorId(pedidoActivo); cerrarModal();
+  // descarga el Excel para que lo adjunten
+  descargar(construirXLSX(p), nombreArchivo(p));
+  const {asunto,cuerpo}=mailAsuntoCuerpo(p);
+  const su=encodeURIComponent(asunto), bo=encodeURIComponent(cuerpo);
+  let url;
+  if(prov==='gmail') url='https://mail.google.com/mail/?view=cm&fs=1&su='+su+'&body='+bo;
+  else if(prov==='outlook') url='https://outlook.office.com/mail/deeplink/compose?subject='+su+'&body='+bo;
+  else url='mailto:?subject='+su+'&body='+bo;
+  toast('Excel descargado: adjuntalo en el mail');
+  if(prov==='mailto') window.location.href=url;
+  else window.open(url,'_blank');
 }
 
 /* ====== GENERADOR XLSX PROPIO (sin librerías) ======
