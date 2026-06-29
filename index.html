@@ -169,11 +169,8 @@ h2.tit{font-size:18px; margin:4px 2px 12px; font-weight:700;}
 /* picker de artículos (lista desplegable con buscador) */
 .sheet.pickersheet{ height:85vh; }
 .sheet.pickersheet .sh-body{ display:flex; flex-direction:column; flex:1; min-height:0; padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
-.pickwrap{ display:flex; flex-direction:column; flex:1; min-height:0; }
-.pickspacer{ flex:1 1 auto; min-height:0; }
-.pickbar{ flex:0 0 auto; margin-top:10px; }
-.pickres{margin-top:4px; max-height:46vh; overflow-y:auto; -webkit-overflow-scrolling:touch;}
-.pickwrap .pickres{ flex:0 1 auto; min-height:0; max-height:none; margin-top:0; }
+.pickbar{ flex:0 0 auto; margin-bottom:8px; }
+.pickres{ flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .pickres .opt{padding:11px 6px; border-bottom:1px solid var(--linea); display:flex; align-items:center; gap:10px;}
 .pickres .opt:active{background:var(--gris);}
 .pickres .opt .info{flex:1; min-width:0;}
@@ -510,12 +507,9 @@ function reabrirPedido(){
 $('#btnAddArt').addEventListener('click', abrirPicker);
 function abrirPicker(){
   abrirModal('Agregar art\u00edculo',
-    '<div class="pickwrap">'
-    +'<div class="pickspacer"></div>'
-    +'<div class="pickres" id="pkRes"></div>'
-    +'<div class="searchbar pickbar"><span class="ic">&#128269;</span>'
+    '<div class="searchbar pickbar"><span class="ic">&#128269;</span>'
     +'<input id="pkBuscar" type="search" placeholder="Buscar por nombre, c\u00f3digo o marca" autocomplete="off" autofocus></div>'
-    +'</div>');
+    +'<div class="pickres" id="pkRes"></div>');
   document.querySelector('.sheet').classList.add('pickersheet');
   const inp=$('#pkBuscar');
   inp.addEventListener('input',()=>renderPicker(inp.value));
