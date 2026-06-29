@@ -23,7 +23,6 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   background:var(--blanco); color:var(--texto);
   min-height:100dvh;
-  padding-top:env(safe-area-inset-top);
 }
 button,input,select{font-family:inherit; font-size:16px; touch-action:manipulation;}
 button{cursor:pointer; border:none; background:none;}
@@ -34,7 +33,6 @@ img{display:block;}
   position:sticky; top:0; z-index:40;
   background:var(--negro); color:#fff;
   padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
-  margin-top:calc(-1 * env(safe-area-inset-top));
   display:flex; align-items:center; gap:12px; min-height:56px;
 }
 .topbar .logo{height:30px; width:auto;}
@@ -186,6 +184,12 @@ h2.tit{font-size:18px; margin:4px 2px 12px; font-weight:700;}
 .pillcerrado{display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#fff; background:var(--rojo); border-radius:999px; padding:1px 7px; vertical-align:middle; margin-left:4px;}
 .lockmsg{background:var(--gris); border-radius:11px; padding:11px 13px; font-size:13px; color:#444; margin-bottom:10px; text-align:center; line-height:1.45;}
 .itemrow .qtyfix{font-weight:700; font-size:15px; white-space:nowrap; color:var(--texto);}
+.obswrap{margin-top:14px;}
+.obslbl{font-size:13px; font-weight:700; margin-bottom:6px; color:#333;}
+.obshint{font-weight:400; color:var(--tenue); font-size:12px;}
+.obsta{width:100%; min-height:80px; padding:12px; border:1px solid var(--linea); border-radius:11px; background:#fff; outline:none; resize:vertical; font-size:15px; line-height:1.45; box-sizing:border-box;}
+.obsta:focus{border-color:var(--negro);}
+.obsro{background:var(--gris); border-radius:11px; padding:12px; font-size:14px; line-height:1.5; color:#333; white-space:pre-wrap;}
 
 /* toast */
 .toast{
@@ -228,6 +232,7 @@ h2.tit{font-size:18px; margin:4px 2px 12px; font-weight:700;}
     <div class="resumen" id="detResumen"></div>
     <button class="btn" id="btnAddArt"><span style="font-size:20px">+</span> Agregar artículo</button>
     <div id="listaItems" style="margin-top:14px"></div>
+    <div id="obsBox"></div>
     <div class="btn-row" id="accionesExport" style="display:none">
       <button class="btn sec" id="btnExcel">Exportar Excel</button>
       <button class="btn" id="btnMail">Enviar por mail</button>
@@ -407,11 +412,14 @@ function renderDetalle(){
     +'<div class="r"><span>Art\u00edculos</span><b>'+p.items.length+'</b></div>'
     +'<div class="r"><span>Unidades totales</span><b>'+nU+'</b></div>';
   $('#btnAddArt').style.display = cerrado ? 'none' : 'flex';
+  renderObs(p, cerrado);
   const cont=$('#listaItems');
   if(p.items.length===0){
     cont.innerHTML='<div class="vacio"><b>Pedido vac\u00edo</b>Agreg\u00e1 art\u00edculos con el bot\u00f3n de arriba.</div>';
-    $('#accionesExport').style.display='none';
-    $('#estadoAcciones').innerHTML='';
+    $('#accionesExport').style.display = (p.obs&&p.obs.trim()) ? 'flex' : 'none';
+    $('#estadoAcciones').innerHTML = cerrado
+      ? '<div class="lockmsg">\uD83D\uDD12 Pedido cerrado. No se puede editar. Reabrilo si necesit\u00e1s corregir algo.</div><button class="btn sec" onclick="reabrirPedido()">Reabrir pedido</button>'
+      : ((p.obs&&p.obs.trim()) ? '<button class="btn" onclick="cerrarPedido()">Cerrar pedido</button>' : '');
     return;
   }
   $('#accionesExport').style.display='flex';
@@ -444,6 +452,26 @@ function renderDetalle(){
     $('#estadoAcciones').innerHTML='<button class="btn" onclick="cerrarPedido()">Cerrar pedido</button>';
   }
 }
+function renderObs(p, cerrado){
+  const box=$('#obsBox'); const obs=p.obs||'';
+  if(cerrado){
+    box.innerHTML = obs.trim()
+      ? '<div class="obswrap"><div class="obslbl">Observaciones</div><div class="obsro">'+esc(obs).replace(/\n/g,'<br>')+'</div></div>'
+      : '';
+    return;
+  }
+  box.innerHTML='<div class="obswrap"><div class="obslbl">Observaciones <span class="obshint">(art\u00edculos fuera del listado, aclaraciones, etc.)</span></div>'
+    +'<textarea id="obsTxt" class="obsta" rows="3" placeholder="Ej.: 2 cajas de servilletas negras (no figura en el listado)\u2026" oninput="setObs(this.value)">'+esc(obs)+'</textarea></div>';
+}
+function setObs(v){
+  const p=pedidoPorId(pedidoActivo); if(!p||p.estado==='cerrado') return;
+  p.obs=v; guardar();
+  // mostrar acciones de export/cerrar si hay observación aunque no haya ítems
+  if(p.items.length===0){
+    $('#accionesExport').style.display = v.trim() ? 'flex' : 'none';
+    $('#estadoAcciones').innerHTML = v.trim() ? '<button class="btn" onclick="cerrarPedido()">Cerrar pedido</button>' : '';
+  }
+}
 function cant(idx,d){ const p=pedidoPorId(pedidoActivo); if(p.estado==='cerrado')return; const it=p.items[idx]; it.cantidad=Math.max(1,it.cantidad+d); guardar(); renderDetalle(); }
 function cantSet(idx,v){ const p=pedidoPorId(pedidoActivo); if(p.estado==='cerrado')return; const it=p.items[idx]; let n=parseInt(v,10); if(isNaN(n)||n<1)n=1; it.cantidad=n; guardar(); renderDetalle(); }
 function borrarItem(idx){ const p=pedidoPorId(pedidoActivo); if(p.estado==='cerrado')return; p.items.splice(idx,1); guardar(); renderDetalle(); }
@@ -458,7 +486,7 @@ function confirmar(titulo,texto,onSi,txtSi){
 }
 function cerrarPedido(){
   const p=pedidoPorId(pedidoActivo);
-  if(p.items.length===0){ toast('Agreg\u00e1 al menos un art\u00edculo'); return; }
+  if(p.items.length===0 && !(p.obs&&p.obs.trim())){ toast('Agreg\u00e1 al menos un art\u00edculo o una observaci\u00f3n'); return; }
   confirmar('Cerrar pedido',
     'Una vez cerrado, el pedido <b>no se puede editar</b>. Vas a poder exportarlo y enviarlo igual, y reabrirlo si necesit\u00e1s corregir algo.',
     ()=>{ p.estado='cerrado'; guardar(); renderDetalle(); toast('Pedido N\u00b0 '+p.numero+' cerrado'); },
@@ -592,6 +620,7 @@ function mailAsuntoCuerpo(p){
   const asunto='Pedido N\u00b0 '+p.numero+' \u2013 '+p.local;
   let cuerpo='Pedido N\u00b0 '+p.numero+'\nLocal: '+p.local+'\nFecha: '+fechaCorta(p.fecha)+'\n\n';
   p.items.forEach(i=>{ cuerpo+='- '+i.nombre+' ('+i.cod+'): '+i.cantidad+' '+(i.unidad||'u')+'\n'; });
+  if(p.obs&&p.obs.trim()){ cuerpo+='\nObservaciones:\n'+p.obs.trim()+'\n'; }
   cuerpo+='\n(Adjunto el Excel del pedido con el formato de la planilla.)';
   return {asunto,cuerpo};
 }
@@ -638,6 +667,11 @@ function construirXLSX(p){
   p.items.forEach(i=>{
     rows.push([i.nombre, i.cantidad, i.unidad||'', i.marca||'', i.prov||'', i.cont||'', fechaCorta(p.fecha)]);
   });
+  if(p.obs && p.obs.trim()){
+    rows.push(['','','','','','','']);
+    rows.push([{v:'OBSERVACIONES',s:2},'','','','','','']);
+    p.obs.trim().split('\n').forEach(linea=>{ rows.push([linea,'','','','','','']); });
+  }
   const headerRowIdx = 5; // 1-based, fila de cols
   const sheetXml = filasAsheetXML(rows, headerRowIdx);
   return zipXLSX(sheetXml);
@@ -649,15 +683,18 @@ function filasAsheetXML(rows, headerRowIdx){
   rows.forEach((row,r)=>{
     const rn=r+1; let cells='';
     row.forEach((val,c)=>{
-      if(val===''||val===null||val===undefined) return;
+      let v=val, sOverride=null;
+      if(val && typeof val==='object'){ v=val.v; sOverride=val.s; }
+      if(v===''||v===null||v===undefined) return;
       const ref=colLetra(c+1)+rn;
       let style=0;
-      if(rn===headerRowIdx) style=1;            // header negro
-      else if(rn<headerRowIdx && c===0) style=2; // etiquetas meta (negrita)
-      if(typeof val==='number'){
-        cells+='<c r="'+ref+'" s="'+style+'"><v>'+val+'</v></c>';
+      if(sOverride!=null) style=sOverride;
+      else if(rn===headerRowIdx) style=1;            // header negro
+      else if(rn<headerRowIdx && c===0) style=2;     // etiquetas meta (negrita)
+      if(typeof v==='number'){
+        cells+='<c r="'+ref+'" s="'+style+'"><v>'+v+'</v></c>';
       }else{
-        cells+='<c r="'+ref+'" s="'+style+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(val)+'</t></is></c>';
+        cells+='<c r="'+ref+'" s="'+style+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(v)+'</t></is></c>';
       }
     });
     body+='<row r="'+rn+'">'+cells+'</row>';
